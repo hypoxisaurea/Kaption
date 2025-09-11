@@ -1,7 +1,7 @@
-// src/components/Logo.tsx
+// src/components/MainLogo.tsx
 
 import React from 'react';
-import LogoImage from '../assets/logo.png'
+import LogoImage from '../assets/images/logo.png'
 
 interface LogoProps {
     width: string;
@@ -11,8 +11,8 @@ function Logo({ width }: LogoProps) {
     return (
         <img
             src={LogoImage}
-            alt="Kaption"
-            className={`w-[${width}] h-auto`}
+            style={{ width }}
+            className="h-auto"
         />
     );
 }
