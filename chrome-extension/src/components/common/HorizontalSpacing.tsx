@@ -6,9 +6,11 @@ interface SpacingProps {
 
 function HorizontalSpacing({ height }: SpacingProps) {
   return (
-    <div style={{height}} className="flex flex-col items-center justify-center w-screen overflow-hidden bg-white"/>
+    <div style={{height}} aria-hidden />
   )
 }
 
 
 export default HorizontalSpacing;
+
+

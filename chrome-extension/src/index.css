@@ -49,6 +49,10 @@
 
 /* 모든 요소에 폰트를 전역으로 적용 */
 @layer base {
+    html, body, #root {
+        height: 100%;
+        margin: 0;
+    }
     body {
         font-family: "SpoqaHanSansNeo", sans-serif;
         -webkit-font-smoothing: antialiased;
