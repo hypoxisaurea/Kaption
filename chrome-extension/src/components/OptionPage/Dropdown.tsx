@@ -36,7 +36,7 @@ function Dropdown({ items, placeholder }: DropdownProps) {
                 {/* 드롭다운 버튼 */}
                 <button
                     type="button"
-                    className="inline-flex justify-between w-full h-[5vh] px-4 py-2 text-sm font-sqopa font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none"
+                    className="inline-flex w-full justify-between h-[5vh] px-4 py-2 text-sm font-spoqa font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none"
                     onClick={toggleDropdown}
                 >
                     {selectedItem ? selectedItem.label : placeholder}
@@ -46,7 +46,7 @@ function Dropdown({ items, placeholder }: DropdownProps) {
             {/* 드롭다운 목록 (isOpen 상태에 따라 조건부 렌더링) */}
             {isOpen && (
                 <div
-                    className="absolute z-10 w-full mt-1 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                    className="absolute z-10 w-full mt-1 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black/5 focus:outline-none"
                     role="menu"
                     aria-orientation="vertical"
                 >

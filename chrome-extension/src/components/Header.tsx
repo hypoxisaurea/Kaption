@@ -1,17 +1,16 @@
 // src/components/Header.tsx
 
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-
-import Logo from './Logo';
+import { Link } from 'react-router-dom';
+import Logo from 'components/Logo';
 
 function Header() {
     return (
-        <header className="flex items-center justify-between h-20 p-4 m-50">
-            <div className="flex items-center max-w-full space-x-4">
-                <Logo width="20%" />
-            </div>
-        </header>
+        <div className="flex items-center justify-center w-full h-[10%] m-[3vh]">
+            <Link to='/'>
+                <Logo width='7.5%' />
+            </Link>
+        </div>
     );
 }
 

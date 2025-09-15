@@ -4,12 +4,10 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import './index.css';
-import App from './App';
-import reportWebVitals from './reportWebVitals';
+import App from 'App';
+import reportWebVitals from 'reportWebVitals';
 
-import LandingPage from './pages/LandingPage';
-import OptionPage from './pages/OptionPage';
-import HomePage from './pages/HomePage';
+import { LandingPage, OptionPage, HomePage } from 'pages';
 
 
 // const ROUTE_PATH = {

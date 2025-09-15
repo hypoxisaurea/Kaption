@@ -1,9 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import Logo from '../components/Logo';
-import Slogan from '../components/LandingPage/Slogan';
-import Button from '../components/BlackButton';
-import HorizontalSpacing from '../components/LandingPage/HorizontalSpacing';
+import Logo from 'components/Logo';
+import Slogan from 'components/LandingPage/Slogan';
+import Button from 'components/BlackButton';
+import { HorizontalSpacing } from 'components/common';
 
 function LandingPage() {
     const navigate = useNavigate();
@@ -12,7 +12,7 @@ function LandingPage() {
     };
     
     return (
-        <div className="flex flex-col items-center justify-center h-screen overflow-hidden bg-white align-vertical">
+        <div className="flex flex-col items-center justify-center h-screen overflow-hidden bg-white">
             <Logo width='20%'/>
             <HorizontalSpacing height='5%'/>
             <Slogan>Kaption uncovers the hidden cultural gems in K-content</Slogan>
