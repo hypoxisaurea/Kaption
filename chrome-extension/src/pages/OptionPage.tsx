@@ -35,7 +35,7 @@ function OptionPage() {
                 
                 {/* 2. Language Level 그룹 */}
                 <div className="flex flex-col items-start w-full mb-2">
-                    <p className='mb-1 font-medium font-spoqa'>Language Level</p>
+                    <p className='mb-2 font-medium font-spoqa'>Language Level</p>
                     <Dropdown items={languageLevels} placeholder="" />
                 </div>
                 

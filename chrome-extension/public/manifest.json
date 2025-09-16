@@ -3,7 +3,8 @@
   "name": "Kaption",
   "version": "1.0.0",
   "description": "Korean culture docent",
-  "permissions": ["storage", "scripting", "tabs", "sidePanel", "notifications"],
+  "host_permissions": ["<all_urls>"],
+  "permissions": ["storage", "scripting", "tabs", "sidePanel", "notifications", "activeTab"],
   "action": {
     "default_icon": {
       "16": "logo/logo16.png",
