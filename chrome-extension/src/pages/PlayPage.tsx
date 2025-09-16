@@ -32,10 +32,14 @@ function PlayPage() {
                     const video = document.querySelector('video');
                     const title = document.title;
                     const url = window.location.href;
+                    const videoId = new URLSearchParams(new URL(url).search).get("v");
+                    const thumbnailUrl = videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : null;
+                    
                     if (!video) return null;
                     return {
                         url,
                         title,
+                        thumbnailUrl,
                         duration: toFinite(video.duration),
                         currentTime: toFinite(video.currentTime),
                         paused: !!video.paused,
