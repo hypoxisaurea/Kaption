@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Header from 'components/common/Header';
 import PlayButton from 'assets/images/button_play.png'
 
-function PlayPage() {
+function DefaultPage() {
     const navigate = useNavigate();
     const handleButtonClick = async () => {
         try {
@@ -58,10 +58,8 @@ function PlayPage() {
                 return;
             }
 
-            console.log("Captured video information:", result);
-
             await chrome.storage.local.set({ currentVideoInfo: result });
-            navigate('/home');
+            navigate('/content');
         } catch (error) {
             console.error(error);
             alert('영상 정보를 가져오는 중 오류가 발생했습니다.');
@@ -79,4 +77,5 @@ function PlayPage() {
 }
 
 
-export default PlayPage;
+export default DefaultPage;
+

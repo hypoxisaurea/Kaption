@@ -7,7 +7,7 @@ import Button from 'components/common/BlackButton';
 function OptionPage() {
     const navigate = useNavigate();
     const handleButtonClick = () => {
-        navigate('/play');
+        navigate('/default');
     };
 
     const languageLevels = [
