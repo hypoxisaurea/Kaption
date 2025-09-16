@@ -28,7 +28,7 @@ const isVideoInfo = (val: unknown): val is VideoInfo => {
     );
 };
 
-function HomePage() {
+function ContentPage() {
     const [videoInfo, setVideoInfo] = useState<null | VideoInfo>(null);
 
     const [loading, setLoading] = useState<boolean>(true);
@@ -118,4 +118,5 @@ function HomePage() {
 }
 
 
-export default HomePage;
+export default ContentPage;
+
