@@ -1,6 +1,6 @@
 import React from 'react'
 import Header from 'components/Header';
-import PlayButton from 'assets/images/play_button.png'
+import PlayButton from 'assets/images/button_play.png'
 
 function HomePage() {
     return (

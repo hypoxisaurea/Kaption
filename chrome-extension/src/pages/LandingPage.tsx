@@ -1,29 +1,36 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom';
-import Logo from 'components/Logo';
-import Slogan from 'components/LandingPage/Slogan';
-import Button from 'components/BlackButton';
-import { HorizontalSpacing } from 'components/common';
+import Logo from 'assets/images/logo_white.png';
 
 function LandingPage() {
-    const navigate = useNavigate();
-    const handleButtonClick = () => {
-        navigate('/option');
+  const navigate = useNavigate();
+  const [isVisible, setIsVisible] = useState(false);
+  const [isFadingOut, setIsFadingOut] = useState(false);
+
+  useEffect(() => {
+    const rafId = requestAnimationFrame(() => setIsVisible(true));
+    const fadeOutId = setTimeout(() => setIsFadingOut(true), 1600);
+    const navId = setTimeout(() => navigate('/start'), 2000);
+    return () => {
+      cancelAnimationFrame(rafId);
+      clearTimeout(fadeOutId);
+      clearTimeout(navId);
     };
-    
-    return (
-        <div className="flex flex-col items-center justify-center h-screen overflow-hidden bg-white">
-            <Logo width='20%'/>
-            <HorizontalSpacing height='5%'/>
-            <Slogan>Kaption uncovers the hidden cultural gems in K-content</Slogan>
-            <HorizontalSpacing height='0.5%'/>
-            <Slogan>Dive deeper into Korea</Slogan>
-            <HorizontalSpacing height='2%'/>
-            <Slogan>Faster, Smarter, Better - </Slogan>
-            <HorizontalSpacing height='5%'/>
-            <Button bgColor="bg-black" textColor="text-white" onClick={handleButtonClick}>Get Started</Button>
-        </div>
-    )
+  }, [navigate]);
+
+  return (
+    <div
+      className={`fixed inset-0 overflow-hidden bg-gradient-to-br from-[#FF8C7A]/30 to-[#2EC4B6]/30 ${isVisible && !isFadingOut ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}
+      style={{ willChange: 'opacity' }}
+    >
+      <div className="flex h-full w-full items-center justify-center">
+      <img
+            src={Logo}
+            className="block mx-auto h-auto w-[10%]"
+        />
+      </div>
+    </div>
+  )
 }
 
 export default LandingPage;
