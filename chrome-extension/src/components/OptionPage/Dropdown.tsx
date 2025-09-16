@@ -46,7 +46,7 @@ function Dropdown({ items, placeholder }: DropdownProps) {
             {/* 드롭다운 목록 (isOpen 상태에 따라 조건부 렌더링) */}
             {isOpen && (
                 <div
-                    className="absolute z-10 w-full mt-1 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black/5 focus:outline-none"
+                    className="absolute z-10 w-full mt-1 bg-white shadow-lg origin-top-right rounded-md ring-1 ring-black/5 focus:outline-none"
                     role="menu"
                     aria-orientation="vertical"
                 >

@@ -10,9 +10,9 @@ import {
 function App() {
   return (
     // 사이드 패널 크기를 꽉 채우는 컨테이너 역할
-    <div className="flex h-screen w-full flex-col">
+    <div className="flex flex-col w-full h-screen">
       {/* Outlet은 자식 라우트의 컴포넌트를 렌더링하는 공간 */}
-      <div className="overflow-y-auto flex-1">
+      <div className="flex-1 overflow-y-auto">
         <Outlet />
       </div>
     </div>
