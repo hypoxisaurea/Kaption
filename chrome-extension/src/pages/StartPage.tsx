@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Logo from 'components/common/Logo';
-import Slogan from 'components/LandingPage/Slogan';
+import Slogan from 'components/StartPage/Slogan';
 import Button from 'components/common/BlackButton';
 import { HorizontalSpacing } from 'components/common';
 
