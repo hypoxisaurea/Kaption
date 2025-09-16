@@ -1,7 +1,7 @@
-export { default as Header } from './Header';
-export { default as Logo } from './Logo';
-export { default as Footer } from './Footer';
-export { default as BlackButton } from './BlackButton';
+export { default as Header } from './common/Header';
+export { default as Logo } from './common/Logo';
+export { default as Footer } from './common/Footer';
+export { default as BlackButton } from './common/BlackButton';
 export * from './common';
 
 
