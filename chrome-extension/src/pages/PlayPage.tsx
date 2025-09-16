@@ -12,7 +12,7 @@ function PlayPage() {
     return (
         <div className='flex flex-col min-h-screen'>
             <Header />
-            <div className='flex flex-1 items-center justify-center w-full'>
+            <div className='flex items-center justify-center flex-1 w-full'>
                 <img src={PlayButton} className='w-[40%]' />
             </div>
         </div>
