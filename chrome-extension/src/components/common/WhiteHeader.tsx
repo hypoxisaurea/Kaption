@@ -1,11 +1,11 @@
-// src/components/Header.tsx
+// src/components/WhiteHeader.tsx
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import Logo from 'assets/images/logo.png';
-import Menu from 'assets/images/button_menu.png';
+import Logo from 'assets/images/logo_white.png';
+import Menu from 'assets/images/button_menu_white.png';
 
-function Header() {
+function WhiteHeader() {
     return (
         <div className="flex items-center justify-between w-full px-10 py-8 box-border">
             <div className="flex items-center justify-start flex-grow-0 shrink-0">
@@ -22,4 +22,4 @@ function Header() {
     );
 }
 
-export default Header;
+export default WhiteHeader;

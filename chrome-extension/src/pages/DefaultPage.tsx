@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom';
 import PlayButton from 'assets/images/button_play.png'
+import WhiteHeader from 'components/common/WhiteHeader'
 
 function DefaultPage() {
     const navigate = useNavigate();
@@ -83,15 +84,20 @@ function DefaultPage() {
     };
 
     return (
-        <div
-            className={`absolute inset-0 overflow-hidden bg-gradient-to-br from-[#FF8C7A]/40 to-[#2EC4B6]/40 ${isVisible && !isFadingOut ? 'opacity-100' : 'opacity-0'} transition-opacity duration-[350ms] flex items-center justify-center`}
-            style={{ willChange: 'opacity' }}
-            onTransitionEnd={handleTransitionEnd}
-        >
-            <div className='flex items-center justify-center w-full h-full'>
-                <img src={PlayButton} alt='Play' className='w-[40%] cursor-pointer' onClick={handleButtonClick} />
+        <>
+            <div className='relative z-10'>
+                <WhiteHeader />
             </div>
-        </div>
+            <div
+                className={`absolute inset-0 z-0 overflow-hidden bg-gradient-to-br from-[#FF8C7A]/40 to-[#2EC4B6]/40 ${isVisible && !isFadingOut ? 'opacity-100' : 'opacity-0'} transition-opacity duration-[350ms] flex items-center justify-center`}
+                style={{ willChange: 'opacity' }}
+                onTransitionEnd={handleTransitionEnd}
+            >
+                <div className='flex items-center justify-center w-full h-full'>
+                    <img src={PlayButton} alt='Play' className='w-[40%] cursor-pointer' onClick={handleButtonClick} />
+                </div>
+            </div>
+        </>
     )
 }
 

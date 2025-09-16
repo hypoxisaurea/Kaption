@@ -5,7 +5,7 @@ import {
   Outlet, // 중첩된 라우트를 렌더링하기 위한 컴포넌트
   useLocation,
 } from 'react-router-dom';
-import Header from 'components/common/Header';
+import Header from 'components/common/ColorHeader';
 
 function App() {
   const [isVisible, setIsVisible] = useState(false);
