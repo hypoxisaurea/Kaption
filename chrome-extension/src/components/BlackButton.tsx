@@ -18,7 +18,7 @@ interface ButtonProps {
     style?: React.CSSProperties; // 추가 인라인 스타일
 }
 
-function BlackButton({ bgColor, textColor, children, onClick, fullWidth, size = 'md', paddingX, paddingY, width, height, className = '', style }: ButtonProps) {
+function BlackButton({ bgColor, textColor, children, onClick, fullWidth, size = 'sm', paddingX, paddingY, width, height, className = '', style }: ButtonProps) {
     const defaultPY = size === 'lg' ? '1.6vh' : size === 'sm' ? '0.6vh' : '0.85vh';
     const inlineStyle: React.CSSProperties = {
         width: fullWidth ? '100%' : width,

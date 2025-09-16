@@ -20,18 +20,20 @@ function StartPage() {
 
   return (
     <div
-      className={`flex flex-col items-center justify-center h-screen overflow-hidden bg-white ${isVisible ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}
+      className={`flex flex-col items-center justify-center h-screen overflow-hidden bg-white ${isVisible ? 'opacity-100' : 'opacity-0'} transition-opacity duration-[350ms]`}
       style={{ willChange: 'opacity' }}
     >
-      <Logo width='15%'/>
-      <HorizontalSpacing height='5%'/>
+      <Logo width='17%'/>
+      <HorizontalSpacing height='8%'/>
       <Slogan>Kaption uncovers the hidden cultural gems in K-content</Slogan>
       <HorizontalSpacing height='0.5%'/>
       <Slogan>Dive deeper into Korea</Slogan>
       <HorizontalSpacing height='2%'/>
       <Slogan>Faster, Smarter, Better - </Slogan>
       <HorizontalSpacing height='5%'/>
-      <Button bgColor="bg-black" textColor="text-white" onClick={handleButtonClick}>Get Started</Button>
+      <div className='w-full max-w-[50%] px-8'>
+        <Button fullWidth bgColor="bg-black" textColor="text-white" className="text-sm" onClick={handleButtonClick}>Get Started</Button>
+      </div>
     </div>
   )
 }
