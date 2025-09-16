@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Logo from 'components/Logo';
-import Slogan from 'components/LandingPage/Slogan';
-import Button from 'components/BlackButton';
+import Logo from 'components/common/Logo';
+import Slogan from 'components/StartPage/Slogan';
+import Button from 'components/common/BlackButton';
 import { HorizontalSpacing } from 'components/common';
 
 function StartPage() {
@@ -24,13 +24,13 @@ function StartPage() {
       style={{ willChange: 'opacity' }}
     >
       <Logo width='17%'/>
-      <HorizontalSpacing height='8%'/>
+      <HorizontalSpacing height='12%'/>
       <Slogan>Kaption uncovers the hidden cultural gems in K-content</Slogan>
       <HorizontalSpacing height='0.5%'/>
       <Slogan>Dive deeper into Korea</Slogan>
       <HorizontalSpacing height='2%'/>
       <Slogan>Faster, Smarter, Better - </Slogan>
-      <HorizontalSpacing height='5%'/>
+      <HorizontalSpacing height='4%'/>
       <div className='w-full max-w-[50%] px-8'>
         <Button fullWidth bgColor="bg-black" textColor="text-white" className="text-sm" onClick={handleButtonClick}>Get Started</Button>
       </div>
