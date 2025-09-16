@@ -9,8 +9,8 @@ function LandingPage() {
 
   useEffect(() => {
     const rafId = requestAnimationFrame(() => setIsVisible(true));
-    const fadeOutId = setTimeout(() => setIsFadingOut(true), 1600);
-    const navId = setTimeout(() => navigate('/start'), 2000);
+    const fadeOutId = setTimeout(() => setIsFadingOut(true), 1150);
+    const navId = setTimeout(() => navigate('/start'), 1500);
     return () => {
       cancelAnimationFrame(rafId);
       clearTimeout(fadeOutId);
@@ -20,7 +20,7 @@ function LandingPage() {
 
   return (
     <div
-      className={`fixed inset-0 overflow-hidden bg-gradient-to-br from-[#FF8C7A]/30 to-[#2EC4B6]/30 ${isVisible && !isFadingOut ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}
+      className={`fixed inset-0 overflow-hidden bg-gradient-to-br from-[#FF8C7A]/35 to-[#2EC4B6]/35 ${isVisible && !isFadingOut ? 'opacity-100' : 'opacity-0'} transition-opacity duration-[350ms]`}
       style={{ willChange: 'opacity' }}
     >
       <div className="flex h-full w-full items-center justify-center">
