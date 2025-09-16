@@ -1,0 +1,62 @@
+/* src/index.css */
+
+/* Tailwind의 기본 지시문은 항상 최상단에 위치 */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+    font-family: "SpoqaHanSansNeo";
+    font-style: normal;
+    font-weight: 100; /* thin */
+    src: url("./assets/fonts/SpoqaHanSansNeo-Thin.otf") format("opentype");
+}
+
+@font-face {
+    font-family: "SpoqaHanSansNeo";
+    font-style: normal;
+    font-weight: 300; /* light */
+    src: url("./assets/fonts/SpoqaHanSansNeo-Light.otf") format("opentype");
+}
+
+@font-face {
+    font-family: "SpoqaHanSansNeo";
+    font-style: normal;
+    font-weight: 400; /* regular */
+    src: url("./assets/fonts/SpoqaHanSansNeo-Regular.otf") format("opentype");
+}
+
+@font-face {
+    font-family: "SpoqaHanSansNeo";
+    font-style: normal;
+    font-weight: 500; /* medium */
+    src: url("./assets/fonts/SpoqaHanSansNeo-Medium.otf") format("opentype");
+}
+
+@font-face {
+    font-family: "SpoqaHanSansNeo";
+    font-style: normal;
+    font-weight: 600; /* bold */
+    src: url("./assets/fonts/SpoqaHanSansNeo-Bold.otf") format("opentype");
+}
+
+@font-face {
+    font-family: "Mash";
+    font-style: normal;
+    font-weight: 700; /* bold */
+    src: url("./assets/fonts/Mash-Ultrabold.otf") format("opentype");
+}
+
+/* 모든 요소에 폰트를 전역으로 적용 */
+@layer base {
+    html, body, #root {
+        height: 100%;
+        margin: 0;
+    }
+    body {
+        font-family: "SpoqaHanSansNeo", sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        font-smooth: never;
+    }
+}
