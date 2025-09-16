@@ -7,8 +7,8 @@ interface SloganProps {
 
 function Slogan({children}: SloganProps) {
     return (
-        <div className='flex flex-col justify-center items-center'>
-            <div className='font-spoqa font-light tracking-tighter'>{children}</div>
+        <div className='flex flex-col items-center justify-center'>
+            <div className='font-light tracking-tighter text-text-dark font-spoqa'>{children}</div>
         </div>
     )
 }

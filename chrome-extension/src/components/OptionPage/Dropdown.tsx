@@ -36,7 +36,7 @@ function Dropdown({ items, placeholder }: DropdownProps) {
                 {/* 드롭다운 버튼 */}
                 <button
                     type="button"
-                    className="inline-flex w-full justify-between h-[5vh] px-4 py-2 text-sm font-spoqa font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none"
+                    className="inline-flex w-full justify-between h-[5vh] px-4 py-2 text-sm font-spoqa font-regular text-black bg-white border border-text-dark rounded-md hover:bg-gray-50 focus:outline-none"
                     onClick={toggleDropdown}
                 >
                     {selectedItem ? selectedItem.label : placeholder}
@@ -46,7 +46,7 @@ function Dropdown({ items, placeholder }: DropdownProps) {
             {/* 드롭다운 목록 (isOpen 상태에 따라 조건부 렌더링) */}
             {isOpen && (
                 <div
-                    className="absolute z-10 w-full mt-1 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black/5 focus:outline-none"
+                    className="absolute z-10 w-full mt-1 font-light bg-white origin-top-right rounded-md font-spoqa ring-1 ring-black/5 focus:outline-none"
                     role="menu"
                     aria-orientation="vertical"
                 >
@@ -54,7 +54,7 @@ function Dropdown({ items, placeholder }: DropdownProps) {
                         {items.map((item) => (
                             <div
                                 key={item.id}
-                                className="block px-4 py-2 text-sm text-gray-700 cursor-pointer hover:bg-gray-100"
+                                className="block px-4 py-2 text-sm cursor-pointer text-text-dark hover:bg-gray-100"
                                 role="menuitem"
                                 onClick={() => handleItemClick(item)}
                             >

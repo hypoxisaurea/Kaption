@@ -7,7 +7,7 @@ import './index.css';
 import App from 'App';
 import reportWebVitals from 'reportWebVitals';
 
-import { LandingPage, StartPage, OptionPage, HomePage } from 'pages';
+import { LandingPage, StartPage, OptionPage, HomePage, PlayPage, MyPage } from 'pages';
 
 
 // const ROUTE_PATH = {
@@ -32,6 +32,14 @@ const router = createMemoryRouter([
       {
         path: '/option',
         element: <OptionPage />,
+      },
+      {
+        path: '/play',
+        element: <PlayPage />,
+      },
+      {
+        path: '/my',
+        element: <MyPage />,
       },
       {
         path: '/home',
