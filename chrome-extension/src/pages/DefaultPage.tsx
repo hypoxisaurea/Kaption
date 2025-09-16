@@ -1,10 +1,26 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom';
-import Header from 'components/common/Header';
 import PlayButton from 'assets/images/button_play.png'
 
 function DefaultPage() {
     const navigate = useNavigate();
+    const [isVisible, setIsVisible] = useState(false);
+    const [isFadingOut, setIsFadingOut] = useState(false);
+
+    useEffect(() => {
+        const rafId = requestAnimationFrame(() => setIsVisible(true));
+        return () => {
+            cancelAnimationFrame(rafId);
+        };
+    }, [navigate]);
+
+    const handleTransitionEnd: React.TransitionEventHandler<HTMLDivElement> = (e) => {
+        if (e.target !== e.currentTarget) return;
+        if (isFadingOut) {
+            navigate('/content');
+        }
+    };
+
     const handleButtonClick = async () => {
         try {
             if (!chrome?.tabs || !chrome?.scripting) {
@@ -59,7 +75,7 @@ function DefaultPage() {
             }
 
             await chrome.storage.local.set({ currentVideoInfo: result });
-            navigate('/content');
+            setIsFadingOut(true);
         } catch (error) {
             console.error(error);
             alert('영상 정보를 가져오는 중 오류가 발생했습니다.');
@@ -67,9 +83,12 @@ function DefaultPage() {
     };
 
     return (
-        <div className='flex flex-col min-h-screen'>
-            <Header />
-            <div className='flex items-center justify-center flex-1 w-full'>
+        <div
+            className={`absolute inset-0 overflow-hidden bg-gradient-to-br from-[#FF8C7A]/40 to-[#2EC4B6]/40 ${isVisible && !isFadingOut ? 'opacity-100' : 'opacity-0'} transition-opacity duration-[350ms] flex items-center justify-center`}
+            style={{ willChange: 'opacity' }}
+            onTransitionEnd={handleTransitionEnd}
+        >
+            <div className='flex items-center justify-center w-full h-full'>
                 <img src={PlayButton} alt='Play' className='w-[40%] cursor-pointer' onClick={handleButtonClick} />
             </div>
         </div>

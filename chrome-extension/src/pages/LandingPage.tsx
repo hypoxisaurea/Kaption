@@ -24,7 +24,7 @@ function LandingPage() {
       style={{ willChange: 'opacity' }}
     >
       <div className="flex items-center justify-center w-full h-full">
-      <img
+        <img
             src={Logo}
             className="block mx-auto h-auto w-[10%]"
         />
