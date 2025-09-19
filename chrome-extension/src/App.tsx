@@ -1,18 +1,28 @@
 // src/App.tsx
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Outlet, // 중첩된 라우트를 렌더링하기 위한 컴포넌트
+  useLocation,
 } from 'react-router-dom';
-
-// Header/Footer는 개별 페이지에서 렌더링합니다.
+import Header from 'components/common/ColorHeader';
 
 function App() {
+  const [isVisible, setIsVisible] = useState(false);
+  const location = useLocation();
+  const showHeader = location.pathname === '/content' || location.pathname === '/my';
+  useEffect(() => {
+    const rafId = requestAnimationFrame(() => setIsVisible(true));
+    return () => cancelAnimationFrame(rafId);
+  }, []);
+
   return (
-    // 사이드 패널 크기를 꽉 채우는 컨테이너 역할
     <div className="flex flex-col w-full h-screen">
-      {/* Outlet은 자식 라우트의 컴포넌트를 렌더링하는 공간 */}
-      <div className="flex-1 overflow-y-auto">
+      {showHeader && <Header />}
+      <div
+        className={`relative flex-1 overflow-y-auto transition-opacity duration-[350ms] ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+        style={{ willChange: 'opacity' }}
+      >
         <Outlet />
       </div>
     </div>

@@ -1,9 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import Header from 'components/common/Header';
 
 type VideoInfo = {
     url: string;
     title: string;
+    metaTitle?: string | null;
+    metaDescription?: string | null;
+    metaKeywords?: string | null;
     thumbnailUrl?: string | null;
     duration: number;
     currentTime: number;
@@ -28,12 +30,12 @@ const isVideoInfo = (val: unknown): val is VideoInfo => {
     );
 };
 
-function HomePage() {
-    const [videoInfo, setVideoInfo] = useState<null | VideoInfo>(null);
 
+function VideoInfo() {
+    const [videoInfo, setVideoInfo] = useState<null | VideoInfo>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
-
+    
     const formatTime = (seconds: number) => {
         const s = Math.floor(seconds % 60).toString().padStart(2, '0');
         const m = Math.floor((seconds / 60) % 60).toString().padStart(2, '0');
@@ -57,6 +59,7 @@ function HomePage() {
 
     useEffect(() => {
         loadInfo();
+
         const listener = (changes: Record<string, { oldValue?: unknown; newValue?: unknown }>, areaName: string) => {
             if (areaName !== 'local') return;
             if ('currentVideoInfo' in changes) {
@@ -65,6 +68,7 @@ function HomePage() {
                 setVideoInfo(isVideoInfo(next) ? next : null);
             }
         };
+
         chrome.storage.onChanged.addListener(listener);
         return () => {
             chrome.storage.onChanged.removeListener(listener);
@@ -73,8 +77,7 @@ function HomePage() {
 
     return (
         <div className='flex flex-col items-center justify-center overflow-hidden'>
-            <Header />
-            <div className='flex-1 w-full max-w-[800px] px-6 py-4'>
+            <div className='flex-1 w-full px-10 py-4'>
                 {loading && (
                     <p className='text-sm text-gray-500'>불러오는 중...</p>
                 )}
@@ -87,29 +90,26 @@ function HomePage() {
                     </div>
                 )}
                 {!loading && !error && videoInfo && (
-                    <div className='space-y-2'>
-                        {videoInfo.thumbnailUrl && (
-                            <img
-                                src={videoInfo.thumbnailUrl}
-                                alt='thumbnail'
-                                className='w-full max-w-[480px] rounded-md border border-gray-200'
-                            />
-                        )}
-                        <div className='text-lg font-medium'>{videoInfo.title}</div>
-                        <div className='text-sm text-gray-600 break-all'>{videoInfo.url}</div>
-                        <div className='text-sm'>
-                            길이: {formatTime(videoInfo.duration)}
-                            {' • '}현재: {formatTime(videoInfo.currentTime)}
-                            {' • '}배속: {videoInfo.playbackRate}x
-                            {' • '}상태: {videoInfo.paused ? '일시정지' : '재생 중'}
+                    <div className='w-full p-4 overflow-hidden border border-gray-200 rounded-lg'>
+                        <div className='flex items-start gap-4'>
+                            {videoInfo.thumbnailUrl && (
+                                <img
+                                    src={videoInfo.thumbnailUrl}
+                                    alt='thumbnail'
+                                    className='flex-shrink-0 w-40 h-auto sm:w-48 md:w-56 lg:w-64 rounded-md'
+                                />
+                            )}
+                            <div className='flex-1 min-w-0 text-left space-y-2'>
+                                <div className='text-lg font-medium'>{videoInfo.metaTitle}</div>
+                                <div className='text-sm text-gray-600 break-all'>{videoInfo.url}</div>
+                                {videoInfo.metaDescription && (
+                                    <div className='text-sm text-gray-700 break-words whitespace-pre-line line-clamp-5'>{videoInfo.metaDescription}</div>
+                                )}
+                                {videoInfo.metaKeywords && (
+                                    <div className='text-sm text-gray-700 break-words'>키워드: {videoInfo.metaKeywords}</div>
+                                )}
+                            </div>
                         </div>
-                        <div className='text-sm text-gray-600'>해상도: {videoInfo.width} × {videoInfo.height}</div>
-                        <button
-                            className='mt-3 px-3 py-1.5 rounded bg-black text-white text-sm'
-                            onClick={loadInfo}
-                        >
-                            새로고침
-                        </button>
                     </div>
                 )}
             </div>
@@ -117,5 +117,4 @@ function HomePage() {
     )
 }
 
-
-export default HomePage;
+export default VideoInfo;
