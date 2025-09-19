@@ -12,10 +12,10 @@ function ContentPage() {
 
     return (
         <div
-            className={`transition-opacity duration-[350ms] ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+            className={`transition-opacity duration-[350ms] ${isVisible ? 'opacity-100' : 'opacity-0'} overflow-hidden`}
             style={{ willChange: 'opacity' }}
         >
-            <div className='flex-1 w-full px-10 py-4'>
+            <div className='flex-1 w-full px-4 py-4 sm:px-10'>
                 <VideoInfo />
             </div>
         </div>
