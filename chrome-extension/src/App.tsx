@@ -17,7 +17,7 @@ function App() {
   }, []);
 
   return (
-    <div className="flex flex-col w-full h-screen">
+    <div className="flex h-screen w-full flex-col">
       {showHeader && <Header />}
       <div
         className={`relative flex-1 overflow-y-auto transition-opacity duration-[350ms] ${isVisible ? 'opacity-100' : 'opacity-0'}`}

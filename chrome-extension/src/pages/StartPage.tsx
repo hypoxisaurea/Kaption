@@ -20,7 +20,7 @@ function StartPage() {
 
   return (
     <div
-      className={`flex flex-col items-center justify-center h-screen overflow-hidden bg-white ${isVisible ? 'opacity-100' : 'opacity-0'} transition-opacity duration-[350ms]`}
+      className={`flex h-screen flex-col items-center justify-center overflow-hidden bg-white ${isVisible ? 'opacity-100' : 'opacity-0'} transition-opacity duration-[350ms]`}
       style={{ willChange: 'opacity' }}
     >
       <Logo width='17%'/>

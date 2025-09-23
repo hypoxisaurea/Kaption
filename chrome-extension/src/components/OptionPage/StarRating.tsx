@@ -31,7 +31,7 @@ const StarIcon: React.FC<StarIconProps> = ({ isFilled }) => (
         strokeWidth="0.5" 
         strokeLinecap="round" 
         strokeLinejoin="round" 
-        className={`w-[7.5vw] h-[7.5vw] transition-colors duration-200 ${isFilled ? 'text-black' : 'text-black'}`}
+        className={`size-[7.5vw] transition-colors duration-200 ${isFilled ? 'text-black' : 'text-black'}`}
     >
         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
     </svg>
@@ -49,7 +49,7 @@ const StarIcon: React.FC<StarIconProps> = ({ isFilled }) => (
                         onClick={() => handleClick(ratingValue)}
                         onMouseEnter={() => handleMouseEnter(ratingValue)}
                         onMouseLeave={handleMouseLeave}
-                        className="p-0 m-0 transition-transform bg-transparent border-none shadow-none focus:outline-none active:outline-none hover:scale-110"
+                        className="m-0 p-0 bg-transparent border-0 shadow-none transition-transform focus:outline-none hover:scale-110"
                         aria-label={`${ratingValue}점 (${isFilled ? '선택됨' : '선택되지 않음'})`}
                     >
                         <StarIcon isFilled={isFilled} />
