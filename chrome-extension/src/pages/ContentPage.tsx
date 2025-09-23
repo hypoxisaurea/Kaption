@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import VideoInfo from 'components/ContentPage/VideoInfo';
 
 
@@ -12,10 +12,10 @@ function ContentPage() {
 
     return (
         <div
-            className={`transition-opacity duration-[350ms] ${isVisible ? 'opacity-100' : 'opacity-0'} overflow-hidden`}
+            className={`overflow-hidden transition-opacity duration-[350ms] ${isVisible ? 'opacity-100' : 'opacity-0'}`}
             style={{ willChange: 'opacity' }}
         >
-            <div className='flex-1 w-full px-4 py-4 sm:px-10'>
+            <div className='w-full flex-1 p-4 sm:px-10'>
                 <VideoInfo />
             </div>
         </div>

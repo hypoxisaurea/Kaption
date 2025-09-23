@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
-type VideoInfo = {
+type VideoInfoData = {
     url: string;
     title: string;
     metaTitle?: string | null;
@@ -15,7 +15,7 @@ type VideoInfo = {
     height: number;
 };
 
-const isVideoInfo = (val: unknown): val is VideoInfo => {
+const isVideoInfo = (val: unknown): val is VideoInfoData => {
     if (!val || typeof val !== 'object') return false;
     const v: any = val;
     return (
@@ -32,16 +32,10 @@ const isVideoInfo = (val: unknown): val is VideoInfo => {
 
 
 function VideoInfo() {
-    const [videoInfo, setVideoInfo] = useState<null | VideoInfo>(null);
+    const [videoInfo, setVideoInfo] = useState<null | VideoInfoData>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     
-    const formatTime = (seconds: number) => {
-        const s = Math.floor(seconds % 60).toString().padStart(2, '0');
-        const m = Math.floor((seconds / 60) % 60).toString().padStart(2, '0');
-        const h = Math.floor(seconds / 3600);
-        return h > 0 ? `${h}:${m}:${s}` : `${m}:${s}`;
-    };
 
     const loadInfo = useCallback(async () => {
         try {
@@ -77,7 +71,7 @@ function VideoInfo() {
 
     return (
         <div className='flex flex-col items-center justify-center overflow-hidden'>
-            <div className='flex-1 w-full px-10 py-4'>
+            <div className='w-full flex-1 px-10 py-4'>
                 {loading && (
                     <p className='text-sm text-gray-500'>불러오는 중...</p>
                 )}
@@ -90,23 +84,23 @@ function VideoInfo() {
                     </div>
                 )}
                 {!loading && !error && videoInfo && (
-                    <div className='w-full p-4 overflow-hidden border border-gray-200 rounded-lg'>
+                    <div className='w-full overflow-hidden rounded-lg border border-gray-200 p-4'>
                         <div className='flex items-start gap-4'>
                             {videoInfo.thumbnailUrl && (
                                 <img
                                     src={videoInfo.thumbnailUrl}
                                     alt='thumbnail'
-                                    className='flex-shrink-0 w-40 h-auto sm:w-48 md:w-56 lg:w-64 rounded-md'
+                                    className='shrink-0 h-auto w-40 sm:w-48 md:w-56 lg:w-64 rounded-md'
                                 />
                             )}
-                            <div className='flex-1 min-w-0 text-left space-y-2'>
+                            <div className='min-w-0 flex-1 space-y-2 text-left'>
                                 <div className='text-lg font-medium'>{videoInfo.metaTitle}</div>
-                                <div className='text-sm text-gray-600 break-all'>{videoInfo.url}</div>
+                                <div className='break-all text-sm text-gray-600'>{videoInfo.url}</div>
                                 {videoInfo.metaDescription && (
-                                    <div className='text-sm text-gray-700 break-words whitespace-pre-line line-clamp-5'>{videoInfo.metaDescription}</div>
+                                    <div className='whitespace-pre-line line-clamp-5 text-sm text-gray-700 break-words'>{videoInfo.metaDescription}</div>
                                 )}
                                 {videoInfo.metaKeywords && (
-                                    <div className='text-sm text-gray-700 break-words'>키워드: {videoInfo.metaKeywords}</div>
+                                    <div className='break-words text-sm text-gray-700'>키워드: {videoInfo.metaKeywords}</div>
                                 )}
                             </div>
                         </div>

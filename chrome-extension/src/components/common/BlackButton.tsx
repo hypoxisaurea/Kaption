@@ -19,7 +19,7 @@ interface ButtonProps {
 }
 
 function BlackButton({ bgColor, textColor, children, onClick, fullWidth, size = 'sm', paddingX, paddingY, width, height, className = '', style }: ButtonProps) {
-    const defaultPY = size === 'lg' ? '1.6vh' : size === 'sm' ? '0.6vh' : '0.85vh';
+    const defaultPY = size === 'lg' ? '2vh' : size === 'sm' ? '0.6vh' : '0.85vh';
     const inlineStyle: React.CSSProperties = {
         width: fullWidth ? '100%' : width,
         height,
@@ -31,7 +31,7 @@ function BlackButton({ bgColor, textColor, children, onClick, fullWidth, size = 
     };
     return (
         <button
-            className={`font-spoqa flex items-center justify-center rounded-full border-0 font-normal ${bgColor} ${textColor} ${className}`}
+            className={`flex items-center justify-center rounded-full border-0 font-normal ${bgColor} ${textColor} font-spoqa ${className}`}
             style={inlineStyle}
             onClick={onClick}
         >
