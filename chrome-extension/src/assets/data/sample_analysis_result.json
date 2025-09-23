@@ -1,0 +1,53 @@
+{
+  "video_info": {
+    "title": "the GEJANG | GOING SEVENTEEN",
+    "total_duration": 278
+  },
+  "checkpoints": [
+    {
+      "timestamp_seconds": 39,
+      "timestamp_formatted": "00:00:39",
+      "trigger_keyword": "반장/banjang",
+      "segment_stt": "2기 반장 이석민",
+      "scene_description": "Seventeen member Lee Seokmin raises his hand, while other members clap and chant 'banjang!'",
+      "context_title": "School Class President",
+      "explanation": {
+        "summary": "banjang means class president, indicating the structure of Korean hierarchy in school.",
+        "main": "반장 (banjang) means 'class president' or 'class leader'.  This shows the importance of structure in Korean culture, even in something like the variety show. In a hierarchical society, leaders and those in authority are shown a lot of respect.",
+        "tip": "In a company setting, this respect extends to your 선배 (sunbae - senior colleague) and 상사 (sangsa - boss/supervisor)."
+      },
+      "related_interests": ["K-Pop"]
+    },
+    {
+      "timestamp_seconds": 119,
+      "timestamp_formatted": "00:01:19",
+      "trigger_keyword": "어저께도 뭐 왔었고/eojekkedo mwo wasseotgo",
+      "segment_stt": "어저께도 뭐 왔었고",
+      "scene_description": "Hoshi says that the group was here yesterday too.",
+      "context_title": "Referencing Previous Events",
+      "explanation": {
+        "summary": "Koreans often refer to previous events as context for current happenings.",
+        "main": "Koreans often build conversational context by mentioning previous related events. This helps establish shared understanding. In the clip, Hoshi mentions that the group was at the same location 'yesterday too' to set the scene.",
+        "tip": "When interacting with Korean friends, try referencing prior shared experiences. It creates a bond and makes conversations flow smoothly!"
+      },
+      "related_interests": ["K-Pop"]
+    },
+    {
+      "timestamp_seconds": 101,
+      "timestamp_formatted": "00:01:01",
+      "trigger_keyword": "커피차/keopicha",
+      "segment_stt": "커피차",
+      "scene_description": "S.Coups jokes about a coffee truck",
+      "context_title": "Food and Beverage Trucks",
+      "explanation": {
+        "summary": "Coffee/food trucks are a common means to provide food or coffee, which is a gift to the cast and staff.",
+        "main": "It is common for actors or kpop idols to send 커피차 (keopicha, coffee trucks) or food trucks to show support for their friends and colleagues. These gifts help create a good atmosphere on set.",
+        "tip": "Coffee trucks are also often gifts from fans to their favorite K-Pop idols!"
+      },
+      "related_interests": ["K-Food", "K-Pop"]
+    }
+  ],
+  "analysis_id": "_iQ4DBMXHpk",
+  "status": "success",
+  "error": null
+}
