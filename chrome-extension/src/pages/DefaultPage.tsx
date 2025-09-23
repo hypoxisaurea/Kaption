@@ -167,12 +167,12 @@ function DefaultPage() {
                 <WhiteHeader />
             </div>
             <div
-                className={`absolute inset-0 z-0 overflow-hidden bg-gradient-to-br from-[#FF8C7A]/40 to-[#2EC4B6]/40 ${isVisible && !isFadingOut ? 'opacity-100' : 'opacity-0'} transition-opacity duration-[350ms] flex items-center justify-center`}
+                className={`absolute inset-0 z-0 flex items-center justify-center overflow-hidden bg-gradient-to-br from-[#FF8C7A]/40 to-[#2EC4B6]/40 ${isVisible && !isFadingOut ? 'opacity-100' : 'opacity-0'} transition-opacity duration-[350ms]`}
                 style={{ willChange: 'opacity' }}
                 onTransitionEnd={handleTransitionEnd}
             >
-                <div className='flex items-center justify-center w-full h-full'>
-                    <img src={PlayButton} alt='Play' className='w-[40%] cursor-pointer' onClick={handleButtonClick} />
+                <div className='flex size-full items-center justify-center'>
+                    <img src={PlayButton} alt='Play' className='w-2/5 cursor-pointer' onClick={handleButtonClick} />
                 </div>
             </div>
         </>

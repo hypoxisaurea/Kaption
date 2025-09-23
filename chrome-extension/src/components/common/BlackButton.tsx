@@ -31,7 +31,7 @@ function BlackButton({ bgColor, textColor, children, onClick, fullWidth, size = 
     };
     return (
         <button
-            className={`font-spoqa flex items-center justify-center rounded-full border-0 font-normal ${bgColor} ${textColor} ${className}`}
+            className={`flex items-center justify-center rounded-full border-0 font-normal ${bgColor} ${textColor} font-spoqa ${className}`}
             style={inlineStyle}
             onClick={onClick}
         >

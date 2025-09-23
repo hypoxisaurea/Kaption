@@ -14,7 +14,7 @@ function Logo({ width, alt }: LogoProps) {
             src={LogoImage}
             alt={alt ?? 'Logo'}
             style={{ width }}
-            className="block h-auto mx-auto"
+            className="mx-auto block h-auto"
         />
     );
 }

@@ -23,10 +23,11 @@ function LandingPage() {
       className={`fixed inset-0 overflow-hidden bg-gradient-to-br from-[#FF8C7A]/45 to-[#2EC4B6]/45 ${isVisible && !isFadingOut ? 'opacity-100' : 'opacity-0'} transition-opacity duration-[350ms]`}
       style={{ willChange: 'opacity' }}
     >
-      <div className="flex items-center justify-center w-full h-full">
+      <div className="flex size-full items-center justify-center">
         <img
             src={Logo}
-            className="block mx-auto h-auto w-[10%]"
+            alt="Kaption Logo"
+            className="mx-auto block h-auto w-[10%]"
         />
       </div>
     </div>
