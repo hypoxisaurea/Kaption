@@ -197,10 +197,10 @@ function OptionPage() {
                                     key={item.id}
                                     type="button"
                                     onClick={() => toggleInterest(item.id)}
-                                    className={`rounded-[2.5vw] border px-3 py-1 text-sm font-spoqa transition-colors ${
+                                    className={`rounded-[2.5vw] px-3 py-1 text-sm font-spoqa transition-colors border-0 outline-none ring-0 focus:outline-none focus:ring-0 active:outline-none ${
                                         isSelected
-                                            ? 'bg-black text-white border-black'
-                                            : 'bg-gray-100 text-gray-700 border-gray-300'
+                                            ? 'bg-black text-white'
+                                            : 'bg-gray-100 text-gray-700'
                                     }`}
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.97 }}
