@@ -62,7 +62,7 @@ function OptionPage() {
                                     key={item.id}
                                     type="button"
                                     onClick={() => toggleInterest(item.id)}
-                                    className={`rounded-full border px-3 py-1.5 text-sm font-spoqa transition-colors ${
+                                    className={`rounded-[2.5vw] border px-3 py-1 text-sm font-spoqa transition-colors ${
                                         isSelected
                                             ? 'bg-black text-white border-black'
                                             : 'bg-gray-100 text-gray-700 border-gray-300'
