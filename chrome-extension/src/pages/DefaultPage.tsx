@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom';
-import PlayButton from 'assets/images/button_play.png'
+import PlayButton from 'assets/images/icon/button_play.png'
 import WhiteHeader from 'components/common/WhiteHeader'
 
 function DefaultPage() {
