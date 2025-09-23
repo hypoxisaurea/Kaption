@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom';
-import Logo from 'assets/images/logo_white.png';
+import Logo from 'assets/images/logo/logo_white_shadow.png';
 
 function LandingPage() {
   const navigate = useNavigate();
@@ -20,7 +20,7 @@ function LandingPage() {
 
   return (
     <div
-      className={`fixed inset-0 overflow-hidden bg-gradient-to-br from-[#FF8C7A]/40 to-[#2EC4B6]/40 ${isVisible && !isFadingOut ? 'opacity-100' : 'opacity-0'} transition-opacity duration-[350ms]`}
+      className={`fixed inset-0 overflow-hidden bg-gradient-to-br from-[#FF8C7A]/45 to-[#2EC4B6]/45 ${isVisible && !isFadingOut ? 'opacity-100' : 'opacity-0'} transition-opacity duration-[350ms]`}
       style={{ willChange: 'opacity' }}
     >
       <div className="flex items-center justify-center w-full h-full">

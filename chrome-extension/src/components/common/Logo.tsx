@@ -1,7 +1,7 @@
 // src/components/MainLogo.tsx
 
 import React from 'react';
-import LogoImage from 'assets/images/logo.png'
+import LogoImage from 'assets/images/logo/logo.png'
 
 interface LogoProps {
     width: string;
