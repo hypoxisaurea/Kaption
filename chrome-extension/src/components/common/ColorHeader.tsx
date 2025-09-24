@@ -9,7 +9,7 @@ function ColorHeader() {
     return (
         <div className="box-border flex w-full items-center justify-between px-10 py-8">
             <div className="flex shrink-0 grow-0 items-center justify-start">
-                <Link to='/' className='block'>
+                <Link to='/option' className='block'>
                     <img src={Logo} alt='Logo' className='block h-auto w-[6vw] shrink-0' />
                 </Link>
             </div>
