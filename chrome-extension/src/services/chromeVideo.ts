@@ -28,15 +28,21 @@ export type AnalyzeResponse = {
   error?: string | null;
 };
 
-const YOUTUBE_URL_PATTERN = "*://*.youtube.com/*";
+const YOUTUBE_URL_PATTERN = [
+  "*://*.youtube.com/*",
+  "*://youtube.com/*",
+  "*://*.youtu.be/*",
+  "*://youtu.be/*",
+];
 
 export async function getActiveYouTubeTab(): Promise<ChromeTab | null> {
   if (!chrome?.tabs) return null;
 
+  // chrome.tabs.query 의 url 필드는 string | string[] 모두 허용
   const tabs = await chrome.tabs.query({
     active: true,
     currentWindow: true,
-    url: YOUTUBE_URL_PATTERN,
+    url: YOUTUBE_URL_PATTERN as unknown as string | string[],
   });
 
   return tabs?.[0] ?? null;

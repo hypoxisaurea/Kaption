@@ -20,6 +20,12 @@ function ContentPage() {
 
                 // 현재 YouTube 탭에서 비디오 정보 가져오기 (없어도 진행)
                 const videoInfo = await fetchAndStoreCurrentVideoInfo();
+                if (!videoInfo) {
+                    console.warn('[ContentPage] 활성 YouTube 비디오를 찾지 못했습니다. 샘플 데이터로 진행합니다.');
+                    setAnalysisData(sampleAnalysis as AnalyzeResponse);
+                    setError(null);
+                    return;
+                }
 
                 // 사용자 프로필 (임시 데이터 - 실제로는 사용자 설정에서 가져와야 함)
                 const userProfile = {
