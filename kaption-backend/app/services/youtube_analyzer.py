@@ -15,6 +15,7 @@ from app.models.schemas import (
 from app.core.prompts import get_cultural_analysis_prompt
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 class YouTubeCulturalAnalyzer:
@@ -140,11 +141,19 @@ class YouTubeCulturalAnalyzer:
                         result_text = result_text[:json_end + 1]
 
                 result_data = json.loads(result_text)
+                logger.info(f"Parsed JSON response successfully")
+                logger.debug(f"Response data keys: {list(result_data.keys())}")
 
                 # 응답 데이터 검증 및 변환
+                video_info_data = result_data.get('video_info', {})
+                logger.debug(f"Video info data: {video_info_data}")
+
+                # total_duration을 float로 처리
+                total_duration = float(video_info_data.get('total_duration', 0))
+
                 video_info = VideoInfo(
-                    title=result_data.get('video_info', {}).get('title', 'Unknown'),
-                    total_duration=result_data.get('video_info', {}).get('total_duration', 0)
+                    title=video_info_data.get('title', 'Unknown'),
+                    total_duration=total_duration
                 )
 
                 checkpoints = []
