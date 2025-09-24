@@ -4,17 +4,24 @@
   "version": "1.0.0",
   "description": "Korean culture docent",
   "host_permissions": ["<all_urls>"],
-  "permissions": ["storage", "scripting", "tabs", "sidePanel", "notifications", "activeTab"],
+  "permissions": [
+    "storage",
+    "scripting",
+    "tabs",
+    "sidePanel",
+    "notifications",
+    "activeTab"
+  ],
   "action": {
     "default_icon": {
-      "16": "logo/logo16.png",
-      "32": "logo/logo32.png"
+      "16": "./logo/logo16.png",
+      "32": "./logo/logo32.png"
     },
     "default_title": "Korean culture docent"
   },
   "icons": {
-    "16": "logo/logo16.png",
-    "32": "logo/logo32.png"
+    "16": "./logo/logo16.png",
+    "32": "./logo/logo32.png"
   },
   "side_panel": {
     "default_path": "index.html"

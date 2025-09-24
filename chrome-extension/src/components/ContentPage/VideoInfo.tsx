@@ -1,47 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react'
-
-type VideoInfo = {
-    url: string;
-    title: string;
-    metaTitle?: string | null;
-    metaDescription?: string | null;
-    metaKeywords?: string | null;
-    thumbnailUrl?: string | null;
-    duration: number;
-    currentTime: number;
-    paused: boolean;
-    playbackRate: number;
-    width: number;
-    height: number;
-};
-
-const isVideoInfo = (val: unknown): val is VideoInfo => {
-    if (!val || typeof val !== 'object') return false;
-    const v: any = val;
-    return (
-        typeof v.url === 'string' &&
-        typeof v.title === 'string' &&
-        typeof v.duration === 'number' &&
-        typeof v.currentTime === 'number' &&
-        typeof v.paused === 'boolean' &&
-        typeof v.playbackRate === 'number' &&
-        typeof v.width === 'number' &&
-        typeof v.height === 'number'
-    );
-};
-
-
+import { VideoInfoData, isVideoInfo } from 'types/video';
 function VideoInfo() {
-    const [videoInfo, setVideoInfo] = useState<null | VideoInfo>(null);
+    const [videoInfo, setVideoInfo] = useState<null | VideoInfoData>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     
-    const formatTime = (seconds: number) => {
-        const s = Math.floor(seconds % 60).toString().padStart(2, '0');
-        const m = Math.floor((seconds / 60) % 60).toString().padStart(2, '0');
-        const h = Math.floor(seconds / 3600);
-        return h > 0 ? `${h}:${m}:${s}` : `${m}:${s}`;
-    };
 
     const loadInfo = useCallback(async () => {
         try {
@@ -76,13 +39,10 @@ function VideoInfo() {
     }, [loadInfo]);
 
     return (
-        <div className='flex flex-col items-center justify-center overflow-hidden'>
-            <div className='flex-1 w-full px-10 py-4'>
+        <div className='flex flex-col items-center w-full'>
+            <div className='w-full py-4'>
                 {loading && (
                     <p className='text-sm text-gray-500'>불러오는 중...</p>
-                )}
-                {!loading && error && (
-                    <p className='text-sm text-red-500'>{error}</p>
                 )}
                 {!loading && !error && !videoInfo && (
                     <div className='text-sm text-gray-600'>
@@ -90,25 +50,19 @@ function VideoInfo() {
                     </div>
                 )}
                 {!loading && !error && videoInfo && (
-                    <div className='w-full p-4 overflow-hidden border border-gray-200 rounded-lg'>
-                        <div className='flex items-start gap-4'>
-                            {videoInfo.thumbnailUrl && (
+                    <div className='w-full overflow-hidden rounded-lg border border-gray-200 px-8 flex min-w-0 flex-col md:flex-row items-start gap-4 md:gap-6'>
+                        {videoInfo.thumbnailUrl && (
+                            <div className='flex justify-center w-full md:w-auto'>
                                 <img
                                     src={videoInfo.thumbnailUrl}
                                     alt='thumbnail'
-                                    className='flex-shrink-0 w-40 h-auto sm:w-48 md:w-56 lg:w-64 rounded-md'
+                                    className='shrink h-auto w-full sm:w-48 md:w-56 lg:w-64 max-w-full rounded-md object-cover'
                                 />
-                            )}
-                            <div className='flex-1 min-w-0 text-left space-y-2'>
-                                <div className='text-lg font-medium'>{videoInfo.metaTitle}</div>
-                                <div className='text-sm text-gray-600 break-all'>{videoInfo.url}</div>
-                                {videoInfo.metaDescription && (
-                                    <div className='text-sm text-gray-700 break-words whitespace-pre-line line-clamp-5'>{videoInfo.metaDescription}</div>
-                                )}
-                                {videoInfo.metaKeywords && (
-                                    <div className='text-sm text-gray-700 break-words'>키워드: {videoInfo.metaKeywords}</div>
-                                )}
                             </div>
+                        )}
+                        <div className='min-w-0 flex-1 space-y-2 text-left'>
+                            <div className='text-1.5 font-medium break-words whitespace-normal max-w-full'>{videoInfo.metaTitle}</div>
+                            <div className='text-1 text-gray-600 break-all whitespace-normal max-w-full'>{videoInfo.url}</div>
                         </div>
                     </div>
                 )}
