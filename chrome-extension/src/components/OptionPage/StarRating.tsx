@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 
-const StarRating = () => {
-    const [rating, setRating] = useState(0);
+interface StarRatingProps {
+    value: number;
+    onChange: (next: number) => void;
+}
+
+const StarRating: React.FC<StarRatingProps> = ({ value, onChange }) => {
     const [hover, setHover] = useState(0);
 
 
     const handleClick = (index: number) => {
-        setRating(index);
+        onChange(index);
     }
 
     const handleMouseEnter = (index: number) => {
@@ -42,7 +46,7 @@ const StarIcon: React.FC<StarIconProps> = ({ isFilled }) => (
         <div className="flex flex-row items-center justify-center space-x-1">
             {[...Array(5)].map((_, index) => {
                 const ratingValue = index + 1;
-                const isFilled = (hover || rating) >= ratingValue;
+                const isFilled = (hover || value) >= ratingValue;
                 return (
                     <motion.button
                         key={ratingValue}

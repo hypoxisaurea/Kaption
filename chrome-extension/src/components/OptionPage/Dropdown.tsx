@@ -12,13 +12,17 @@ interface DropdownItem {
 interface DropdownProps {
     items: DropdownItem[];
     placeholder: string;
+    value?: number | null; // selected id
+    onChange?: (id: number, item: DropdownItem) => void;
 }
 
-function Dropdown({ items, placeholder }: DropdownProps) {
+function Dropdown({ items, placeholder, value = null, onChange }: DropdownProps) {
     // 드롭다운이 열려 있는지 닫혀 있는지 상태를 관리합니다.
     const [isOpen, setIsOpen] = useState(false);
     // 현재 선택된 항목의 상태를 관리합니다.
-    const [selectedItem, setSelectedItem] = useState<DropdownItem | null>(null);
+    const [selectedItem, setSelectedItem] = useState<DropdownItem | null>(
+        value != null ? items.find(i => i.id === value) ?? null : null
+    );
 
     // 드롭다운 버튼 클릭 시 상태를 토글하는 함수
     const toggleDropdown = () => {
@@ -29,6 +33,7 @@ function Dropdown({ items, placeholder }: DropdownProps) {
     const handleItemClick = (item: DropdownItem) => {
         setSelectedItem(item);
         setIsOpen(false);
+        onChange?.(item.id, item);
     };
 
     return (
