@@ -47,7 +47,7 @@ class CulturalCheckpoint(BaseModel):
 class VideoInfo(BaseModel):
     """Video basic information"""
     title: str = Field(..., description="Video title in English")
-    total_duration: int = Field(..., description="Total duration in seconds")
+    total_duration: float = Field(..., description="Total duration in seconds")
 
 
 class AnalyzeResponse(BaseModel):
