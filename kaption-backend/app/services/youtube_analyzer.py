@@ -5,8 +5,8 @@ import re
 import json
 import logging
 from typing import Optional, Dict, Any, List
-from google import genai
-from google.genai import types
+import google.generativeai as genai
+from google.generativeai.types import GenerationConfig
 
 from app.models.schemas import (
     UserProfile, VideoInfo, CulturalCheckpoint,
@@ -27,9 +27,9 @@ class YouTubeCulturalAnalyzer:
         if not self.api_key:
             raise ValueError("GOOGLE_API_KEY not found in environment")
 
-        # Google Gemini Client 생성
-        self.client = genai.Client(api_key=self.api_key)
-        logger.info("Gemini API client initialized for cultural context analysis")
+        # Google Generative AI 구성
+        genai.configure(api_key=self.api_key)
+        logger.info("Gemini API configured for cultural context analysis")
 
     def extract_video_id(self, url: str) -> Optional[str]:
         """YouTube URL에서 video ID 추출"""
@@ -55,6 +55,55 @@ class YouTubeCulturalAnalyzer:
             return f"{hours:02d}:{minutes:02d}:{secs:02d}"
         else:
             return f"{minutes:02d}:{secs:02d}"
+
+    def _get_response_schema(self):
+        """Get structured output schema for Gemini API"""
+        return {
+            "type": "object",
+            "properties": {
+                "video_info": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "total_duration": {"type": "number"}
+                    },
+                    "required": ["title", "total_duration"]
+                },
+                "checkpoints": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "timestamp_seconds": {"type": "integer"},
+                            "timestamp_formatted": {"type": "string"},
+                            "trigger_keyword": {"type": "string"},
+                            "segment_stt": {"type": "string"},
+                            "scene_description": {"type": "string"},
+                            "context_title": {"type": "string"},
+                            "explanation": {
+                                "type": "object",
+                                "properties": {
+                                    "summary": {"type": "string"},
+                                    "main": {"type": "string"},
+                                    "tip": {"type": "string"}
+                                },
+                                "required": ["summary", "main", "tip"]
+                            },
+                            "related_interests": {
+                                "type": "array",
+                                "items": {"type": "string"}
+                            }
+                        },
+                        "required": [
+                            "timestamp_seconds", "timestamp_formatted", "trigger_keyword",
+                            "segment_stt", "scene_description", "context_title",
+                            "explanation", "related_interests"
+                        ]
+                    }
+                }
+            },
+            "required": ["video_info", "checkpoints"]
+        }
 
     async def analyze_video(
         self,
@@ -90,56 +139,29 @@ class YouTubeCulturalAnalyzer:
             # 사용자 프로필 기반 프롬프트 생성
             prompt = get_cultural_analysis_prompt(user_profile.dict())
 
-            # Gemini API 호출
-            logger.info("Calling Gemini API for video analysis...")
+            # Gemini API 호출 with structured output
+            logger.info("Calling Gemini API with structured output...")
 
-            # Add JSON instruction to prompt for better results
-            json_prompt = prompt + "\n\nREMEMBER: Output ONLY valid JSON, nothing else."
-
-            response = self.client.models.generate_content(
-                model='models/gemini-2.0-flash-exp',
-                contents=types.Content(
-                    parts=[
-                        types.Part(
-                            file_data=types.FileData(file_uri=youtube_url)
-                        ),
-                        types.Part(text=json_prompt)
-                    ]
+            # 모델 초기화
+            model = genai.GenerativeModel(
+                'gemini-2.5-flash',
+                generation_config=GenerationConfig(
+                    response_mime_type="application/json",
+                    response_schema=self._get_response_schema()
                 )
             )
 
-            # 응답 파싱
+            # YouTube URL을 직접 전달하여 비디오 분석
+            logger.info(f"Processing YouTube URL: {youtube_url}")
+            response = model.generate_content([youtube_url, prompt])
+
+            # 응답 파싱 - structured output이므로 직접 JSON으로 파싱 가능
             try:
-                # JSON 응답 파싱
+                # Structured output은 이미 JSON 형식으로 반환됨
                 result_text = response.text
-                logger.info(f"Raw response length: {len(result_text)} characters")
+                logger.info(f"Received structured response length: {len(result_text)} characters")
 
-                # Clean up response text
-                result_text = result_text.strip()
-
-                # JSON 블록 추출 (```json ... ``` 형식 처리)
-                if '```json' in result_text:
-                    json_match = re.search(r'```json\s*(.*?)\s*```', result_text, re.DOTALL)
-                    if json_match:
-                        result_text = json_match.group(1)
-                elif '```' in result_text:
-                    # Handle plain code blocks
-                    json_match = re.search(r'```\s*(.*?)\s*```', result_text, re.DOTALL)
-                    if json_match:
-                        result_text = json_match.group(1)
-
-                # Remove any non-JSON content before the first {
-                if result_text and not result_text.strip().startswith('{'):
-                    json_start = result_text.find('{')
-                    if json_start != -1:
-                        result_text = result_text[json_start:]
-
-                # Remove any non-JSON content after the last }
-                if result_text:
-                    json_end = result_text.rfind('}')
-                    if json_end != -1:
-                        result_text = result_text[:json_end + 1]
-
+                # JSON 파싱
                 result_data = json.loads(result_text)
                 logger.info(f"Parsed JSON response successfully")
                 logger.debug(f"Response data keys: {list(result_data.keys())}")
@@ -197,9 +219,15 @@ class YouTubeCulturalAnalyzer:
                 )
 
             except json.JSONDecodeError as e:
-                logger.error(f"Failed to parse JSON response: {e}")
-                # Fallback: 기본 응답 생성
-                return self._create_fallback_response(response.text, video_id)
+                logger.error(f"Failed to parse structured JSON response: {e}")
+                logger.error(f"Raw response: {response.text[:500]}...")
+                # Structured output에서는 JSON 파싱 실패가 드물지만, fallback 제공
+                return AnalyzeResponse(
+                    video_info=VideoInfo(title="Parse Error", total_duration=0),
+                    checkpoints=[],
+                    status="error",
+                    error=f"Failed to parse API response: {str(e)}"
+                )
 
         except Exception as e:
             error_msg = str(e)
@@ -298,17 +326,12 @@ class YouTubeCulturalAnalyzer:
             [00:00:10] 다음 발언 내용
             """
 
-            response = self.client.models.generate_content(
-                model='models/gemini-2.0-flash-exp',
-                contents=types.Content(
-                    parts=[
-                        types.Part(
-                            file_data=types.FileData(file_uri=youtube_url)
-                        ),
-                        types.Part(text=prompt)
-                    ]
-                )
-            )
+            # 모델 초기화
+            model = genai.GenerativeModel('gemini-2.5-flash')
+
+            # YouTube URL을 직접 전달하여 transcript 추출
+            logger.info(f"Extracting transcript from YouTube URL: {youtube_url}")
+            response = model.generate_content([youtube_url, prompt])
 
             return response.text
 
