@@ -281,3 +281,63 @@ export async function fetchAndStoreCurrentVideoInfo(): Promise<VideoInfoData | n
   await saveVideoInfoToStorage(info);
   return info;
 }
+
+// ===== User Profile Storage =====
+export async function saveUserProfileToStorage(
+  profile: UserProfilePayload
+): Promise<void> {
+  if (chrome?.storage?.local) {
+    await chrome.storage.local.set({ userProfile: profile });
+  } else {
+    try {
+      localStorage.setItem("userProfile", JSON.stringify(profile));
+    } catch {}
+  }
+}
+
+export async function getUserProfileFromStorage(): Promise<UserProfilePayload | null> {
+  if (chrome?.storage?.local) {
+    const r = await chrome.storage.local.get(["userProfile"]);
+    return (r?.userProfile as UserProfilePayload | undefined) ?? null;
+  }
+  try {
+    const raw = localStorage.getItem("userProfile");
+    return raw ? (JSON.parse(raw) as UserProfilePayload) : null;
+  } catch {
+    return null;
+  }
+}
+
+// ===== DeepDive Batch API =====
+export type DeepDiveBatchResponse = {
+  items: any[]; // Backend typed; UI consumes specific fields per item
+};
+
+export async function requestDeepDiveBatch(
+  profile: UserProfilePayload,
+  checkpoints: AnalyzeResponse["checkpoints"]
+): Promise<DeepDiveBatchResponse> {
+  const endpoint = `${API_BASE}/api/deepdive/batch`;
+  const resp = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user_profile: profile, checkpoints }),
+  });
+  if (!resp.ok) {
+    const text = await resp.text();
+    throw new Error(`DeepDive batch failed: ${resp.status} ${text}`);
+  }
+  return (await resp.json()) as DeepDiveBatchResponse;
+}
+
+export async function saveDeepDiveResultToStorage(
+  result: DeepDiveBatchResponse
+): Promise<void> {
+  if (chrome?.storage?.local) {
+    await chrome.storage.local.set({ lastDeepDiveResult: result });
+  } else {
+    try {
+      localStorage.setItem("lastDeepDiveResult", JSON.stringify(result));
+    } catch {}
+  }
+}

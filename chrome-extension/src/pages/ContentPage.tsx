@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom';
 import { VideoInfo } from 'components';
 import ContentModule from 'components/ContentPage/ContentModule';
+import { prewarmRealtime, setTtsStyle } from 'services/tts';
 import DeepDiveModal from 'components/ContentPage/DeepDiveModal';
 import usePageTransition from 'hooks/usePageTransition';
-import { AnalyzeResponse, fetchAndStoreCurrentVideoInfo, analyzeCurrentVideo } from 'services/chromeVideo';
+import { AnalyzeResponse, fetchAndStoreCurrentVideoInfo, analyzeCurrentVideo, getUserProfileFromStorage, requestDeepDiveBatch, saveDeepDiveResultToStorage } from 'services/chromeVideo';
 import sampleAnalysis from 'assets/data/sample_analysis_result.json';
 
 
@@ -15,17 +16,50 @@ function ContentPage() {
     const [analysisData, setAnalysisData] = useState<AnalyzeResponse | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [loadingCardId, setLoadingCardId] = useState<string | null>(null);
 
-    const handleCheckpointClick = (checkpoint: any) => {
+    const handleCheckpointClick = async (checkpoint: any) => {
+        // 사용자 제스처 시점에 오디오/세션 선-준비
+        try {
+            // apply mascot voice style before prewarm
+            setTtsStyle({
+                voice: 'sage',
+                instructions: 'You are Taki, a cheerful female bunny tutor mascot. Speak English only. Keep it friendly, energetic, and playful. Use short sentences (7–12 words) and a slightly higher pitch. Stay natural and not overly cutesy. Keep pace comfortable. Sound like you are talking to a friend while teaching.'
+            });
+            prewarmRealtime();
+        } catch {}
         const clickedElementId = `checkpoint-${checkpoint.timestamp_seconds}-${checkpoint.trigger_keyword}`;
+        setLoadingCardId(clickedElementId);
         const scrollY = window.scrollY;
+
+        // 저장된 프로필 로드
+        const profile = await getUserProfileFromStorage();
+
+        let deepDiveItem: any | undefined = undefined;
+        try {
+            if (profile) {
+                const batch = await requestDeepDiveBatch(profile, [checkpoint]);
+                if (batch?.items && batch.items.length > 0) {
+                    deepDiveItem = batch.items[0];
+                    await saveDeepDiveResultToStorage(batch);
+                }
+            }
+        } catch (e) {
+            console.warn('[DeepDive] batch failed', e);
+        } finally {
+            // 로딩 오버레이는 모달 전환 직전까지 유지되며, 전환 후에는 필요 없음
+        }
+
         // 동일 경로(/content)에 모달 state만 push하여 배경 유지
         navigateWithCardExpand('/content', {
             from: 'content',
             clickedElementId,
             scrollY,
-            modalCheckpoint: checkpoint
+            modalCheckpoint: checkpoint,
+            deepDiveItem,
         });
+        // 네비게이션 호출 후 로딩 상태 해제
+        setTimeout(() => setLoadingCardId(null), 0);
     };
 
     const getPageClass = () => {
@@ -129,6 +163,7 @@ function ContentPage() {
     // 모달 상태: location.state?.modalCheckpoint
     const navState = (location.state as any) || undefined;
     const modalCheckpoint = navState?.modalCheckpoint as any | undefined;
+    const modalDeepDiveItem = navState?.deepDiveItem as any | undefined;
 
     return (
         <div className={getPageClass()}>
@@ -137,8 +172,8 @@ function ContentPage() {
                     <VideoInfo />
                     
                     {loading && (
-                        <div className="flex justify-center items-center py-8">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        <div className="flex items-center justify-center py-8">
+                            <div className="size-8 rounded-full border-b-2 border-blue-600 animate-spin"></div>
                             <span className="ml-3 text-gray-600">분석 중...</span>
                         </div>
                     )}
@@ -152,13 +187,17 @@ function ContentPage() {
 
                     {analysisData && analysisData.checkpoints && (
                         <div className="mt-6">
-                            {analysisData.checkpoints.map((checkpoint, index) => (
-                                <ContentModule 
-                                    key={`${checkpoint.timestamp_seconds}-${index}`}
-                                    checkpoint={checkpoint}
-                                    onClick={handleCheckpointClick}
-                                />
-                            ))}
+                            {analysisData.checkpoints.map((checkpoint, index) => {
+                                const cardId = `checkpoint-${checkpoint.timestamp_seconds}-${checkpoint.trigger_keyword}`;
+                                return (
+                                    <ContentModule 
+                                        key={`${checkpoint.timestamp_seconds}-${index}`}
+                                        checkpoint={checkpoint}
+                                        onClick={handleCheckpointClick}
+                                        isLoading={loadingCardId === cardId}
+                                    />
+                                );
+                            })}
                         </div>
                     )}
 
@@ -173,7 +212,7 @@ function ContentPage() {
                 </div>
             </div>
             {modalCheckpoint && (
-                <DeepDiveModal checkpoint={modalCheckpoint} onClose={() => navigate(-1)} />
+                <DeepDiveModal checkpoint={modalCheckpoint} deepDiveItem={modalDeepDiveItem} onClose={() => navigate(-1)} />
             )}
         </div>
     )

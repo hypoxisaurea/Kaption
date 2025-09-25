@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Logo, BlackButton as Button, StarRating } from 'components';
 import Dropdown from 'components/OptionPage/Dropdown';
-import { fetchAndStoreCurrentVideoInfo, analyzeCurrentVideo, saveAnalysisResultToStorage, UserProfilePayload } from 'services/chromeVideo';
+import { fetchAndStoreCurrentVideoInfo, analyzeCurrentVideo, saveAnalysisResultToStorage, UserProfilePayload, saveUserProfileToStorage } from 'services/chromeVideo';
 import sampleAnalysis from 'assets/data/sample_analysis_result.json';
 
 function OptionPage() {
@@ -75,6 +75,9 @@ function OptionPage() {
                 language_level: language,
                 interests,
             };
+
+            // 사용자 프로필 저장
+            await saveUserProfileToStorage(profile);
 
             console.groupCollapsed('[OptionPage] Analyze Submit');
             console.log('video_url', info?.url);

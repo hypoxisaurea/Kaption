@@ -14,6 +14,7 @@ from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
+import requests
 
 from app.models.schemas import (
     AnalyzeRequest, AnalyzeResponse,
@@ -75,12 +76,10 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "chrome-extension://*",  # Chrome Extension
-        "http://localhost:*",     # 로컬 개발
-        "http://127.0.0.1:*",
-        "http://localhost:5173",  # Vite 개발 서버
-        "http://localhost:3000",  # React 개발 서버
+        "http://localhost:5173",
+        "http://localhost:3000",
     ],
+    allow_origin_regex=r"chrome-extension://.*|http://localhost(:\\d+)?|http://127\\.0\\.0\\.1(:\\d+)?",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -228,6 +227,61 @@ async def http_exception_handler(request, exc):
             "status_code": exc.status_code
         }
     )
+
+
+@app.post("/api/tts/session-token")
+async def get_realtime_tts_session_token(payload: Dict[str, Any]):
+    """OpenAI Realtime 세션용 에페메럴 키를 프록시 발급한다."""
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+    if not OPENAI_API_KEY:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="OPENAI_API_KEY is not configured on the server"
+        )
+
+    # 기본값 보강
+    forward_payload: Dict[str, Any] = {
+        "model": payload.get("model") or "gpt-4o-realtime-preview-2024-12-17",
+        "voice": payload.get("voice") or "verse",
+        "instructions": payload.get("instructions") or "You are a natural TTS reader. Read texts clearly and naturally.",
+    }
+    # 추가 필드가 있다면 유지
+    for k, v in payload.items():
+        if k not in forward_payload:
+            forward_payload[k] = v
+
+    try:
+        resp = requests.post(
+            "https://api.openai.com/v1/realtime/sessions",
+            headers={
+                "Authorization": f"Bearer {OPENAI_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json=forward_payload,
+            timeout=15,
+        )
+        if resp.status_code >= 400:
+            try:
+                err_json = resp.json()
+            except Exception:
+                err_json = {"message": resp.text}
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail={
+                    "message": "Failed to obtain realtime session token",
+                    "upstream_status": resp.status_code,
+                    "upstream": err_json,
+                },
+            )
+        data = resp.json()
+        client_secret = data.get("client_secret")
+        if not client_secret:
+            raise HTTPException(status_code=500, detail="Missing client_secret from upstream response")
+        return {"client_secret": client_secret}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Session token error: {str(e)}")
 
 
 @app.exception_handler(Exception)
