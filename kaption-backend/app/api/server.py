@@ -17,8 +17,8 @@ from dotenv import load_dotenv
 
 from app.models.schemas import (
     AnalyzeRequest, AnalyzeResponse,
-    DeepDiveGenerateRequest, DeepDiveGenerateResponse,
-    CulturalCheckpoint, UserProfile
+    CulturalCheckpoint, UserProfile,
+    DeepDiveBatchRequest, DeepDiveBatchResponse
 )
 from app.services.youtube_analyzer import YouTubeCulturalAnalyzer
 
@@ -189,9 +189,9 @@ async def analyze_video(request: AnalyzeRequest):
         )
 
 
-@app.post("/api/deepdive", response_model=DeepDiveGenerateResponse)
-async def generate_deepdive(content: DeepDiveGenerateRequest):
-    """Generate rich deep-dive tutoring content for a given checkpoint using Gemini"""
+@app.post("/api/deepdive/batch", response_model=DeepDiveBatchResponse)
+async def generate_deepdive_batch(request: DeepDiveBatchRequest):
+    """Generate recap/TPS/quizzes for a list of checkpoints (batch)."""
     if not analyzer:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -199,67 +199,22 @@ async def generate_deepdive(content: DeepDiveGenerateRequest):
         )
 
     try:
-        result = await analyzer.generate_deep_dive_content(
-            checkpoint=content.checkpoint,
-            user_profile=content.user_profile
+        result = await analyzer.generate_deep_dive_batch(
+            user_profile=request.user_profile,
+            checkpoints=request.checkpoints,
         )
         return result
     except HTTPException:
         raise
     except Exception as e:
-        logger.exception(f"DeepDive generation failed: {e}")
+        logger.exception(f"DeepDive batch generation failed: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to generate deep dive content: {str(e)}"
+            detail=f"Failed to generate deep dive batch content: {str(e)}"
         )
 
 
-@app.post("/api/analyze/transcript")
-async def get_transcript(request: Dict[str, str]):
-    """
-    YouTube 영상의 트랜스크립트 추출
-
-    Args:
-        request: {"youtube_url": "URL"}
-
-    Returns:
-        영상 트랜스크립트
-    """
-    youtube_url = request.get("youtube_url")
-    if not youtube_url:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="youtube_url is required"
-        )
-
-    if not analyzer:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Analysis service is not available"
-        )
-
-    try:
-        transcript = await analyzer.get_video_transcript(youtube_url)
-
-        if not transcript:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Could not extract transcript from video"
-            )
-
-        return {
-            "youtube_url": youtube_url,
-            "transcript": transcript
-        }
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error extracting transcript: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to extract transcript: {str(e)}"
-        )
+# Transcript extraction endpoint removed (unused)
 
 
 @app.exception_handler(HTTPException)

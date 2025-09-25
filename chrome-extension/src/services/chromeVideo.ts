@@ -17,10 +17,6 @@ export type AnalyzeResponse = {
       main: string;
       tip: string;
     };
-    deep_dive?: {
-      type: string;
-      reason: string;
-    };
     related_interests?: string[];
   }>;
   analysis_id: string;

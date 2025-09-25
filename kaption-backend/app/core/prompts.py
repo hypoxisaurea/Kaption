@@ -35,17 +35,21 @@ def get_cultural_analysis_prompt(user_profile: dict) -> str:
 User Profile:
 - Korean Culture Familiarity: {user_profile.get('familiarity', 3)}/5 ({familiarity_context.get(user_profile.get('familiarity', 3), familiarity_context[3])})
 - Korean Language Level: {user_profile.get('language_level', 'Intermediate')} ({language_context.get(user_profile.get('language_level', 'Intermediate'), language_context['Intermediate'])})
-- Interests: {interests_str}
+- Interests (normalized slugs from extension): {interests_str}
+
+Allowed related_interests values (use only these exact slugs):
+- k-pop, k-drama, food, language, history, humor, politics, beauty-fashion
 
 Analysis Guidelines:
-1. Watch the video and identify Korean cultural elements that foreigners might find difficult to understand
-2. Record each cultural element with accurate timestamps
-3. Adjust explanations based on user's level and interests
-4. IMPORTANT: Respond in ENGLISH as the primary language, but include Korean terms with explanations
-5. Do not include any additional tutoring metadata; the deep-dive content will be generated later by another endpoint.
+1. Identify Korean cultural elements that foreigners might find difficult to understand.
+2. Record each cultural element with accurate timestamps.
+3. Adjust explanations based on user's level and interests.
+4. PRIMARY LANGUAGE: English. Include Korean terms with romanization and short explanations.
+5. trigger_keyword MUST be concise: 1–2 words, short Korean term with romanization (e.g., "이모/imo", "형/hyung"). Avoid long phrases or full sentences.
+6. related_interests MUST be chosen from the allowed slugs above and should reflect the user's interests when relevant.
 
 Cultural Elements to Look For:
-- Honorific culture (언니/unnie, 오빠/oppa, 선배/sunbae, 이모님/imo-nim, etc.)
+- Honorific culture (언니/eonni, 오빠/oppa, 선배/sunbae, etc.)
 - Dining etiquette (chopsticks usage, drinking culture, 회식/hoeshik, etc.)
 - Language nuances (존댓말/jondaemal, 반말/banmal, humble expressions)
 - Social customs (age hierarchy, senior-junior culture)
@@ -77,7 +81,7 @@ Example 1 (K-Pop content):
         "main": "In Korea, younger males address older male friends as '형 (hyung)', showing respect for age hierarchy. This is fundamental in Korean social relationships, used even among close friends.",
         "tip": "Males use 'hyung' for older males, females would use 'oppa' instead"
       }},
-      "related_interests": ["K-Pop", "Korean Language"]
+      "related_interests": ["k-pop", "language"]
     }},
     {{
       "timestamp_seconds": 467,
@@ -91,7 +95,7 @@ Example 1 (K-Pop content):
         "main": "막내 (maknae) means the youngest member in any Korean group. Maknaes often receive special attention and care from older members, but also have responsibilities like aegyo (acting cute).",
         "tip": "In K-pop groups, the maknae often has a special role and fanbase"
       }},
-      "related_interests": ["K-Pop"]
+      "related_interests": ["k-pop"]
     }}
   ]
 }}
@@ -115,7 +119,7 @@ Example 2 (Korean Food content):
         "main": "이모 (imo, literally 'aunt') is used to address middle-aged women in markets or casual restaurants. It's not their actual aunt - it's a cultural way to show friendliness.",
         "tip": "Use 'imo' in markets and casual eateries, but 'sajangnim' in formal restaurants"
       }},
-      "related_interests": ["K-Food"]
+      "related_interests": ["food"]
     }},
     {{
       "timestamp_seconds": 234,
@@ -129,7 +133,7 @@ Example 2 (Korean Food content):
         "main": "잘 먹겠습니다 (jal meokgesseumnida) literally means 'I will eat well' and is said before eating to show appreciation to the cook or host. It's basic Korean dining etiquette.",
         "tip": "Always say this before eating, and '잘 먹었습니다' (jal meogeosseumnida) after finishing"
       }},
-      "related_interests": ["K-Food", "Traditional Culture"]
+      "related_interests": ["food", "language"]
     }}
   ]
 }}
@@ -153,7 +157,7 @@ Your response format:
         "main": "string - detailed explanation (2-3 sentences)",
         "tip": "string - additional tip for user's level"
       }},
-      "related_interests": ["array of strings - can be empty []"]
+      "related_interests": ["array of strings from allowed list (can be empty []): k-pop | k-drama | food | language | history | humor | politics | beauty-fashion"]
     }}
   ]
 }}
@@ -163,11 +167,12 @@ Critical Requirements:
 - total_duration: float number (can have decimals)
 - timestamp_seconds: integer (no decimals)
 - All text fields: non-empty strings
-- related_interests: array (can be empty [])
+- related_interests: choose only from allowed slugs; may be an empty array []
 - Find at least 3 cultural checkpoints
 - Adjust explanation depth based on user's familiarity level (1-5)
 - Include romanization for all Korean terms
-- PRIMARY LANGUAGE IS ENGLISH with Korean terms explained"""
+- PRIMARY LANGUAGE IS ENGLISH with Korean terms explained
+- Keep trigger_keyword short (1–2 words); avoid long phrases"""
 
     return prompt
 
@@ -196,3 +201,64 @@ def get_scene_analysis_prompt() -> str:
    - Cultural items like food, places, objects
 
 Please structure your response in JSON format."""
+
+
+def get_deepdive_batch_prompt(user_profile: dict, checkpoints: list[dict]) -> str:
+    """
+    Build prompt for DeepDive batch generation.
+
+    Args:
+        user_profile: {familiarity, language_level, interests(slugs)}
+        checkpoints: list of dicts with keys:
+            timestamp_seconds, timestamp_formatted, trigger_keyword, segment_stt,
+            scene_description, context_title, related_interests
+
+    Returns:
+        Instructional prompt string for Gemini structured output.
+    """
+
+    interests_str = ", ".join(user_profile.get("interests", [])) if user_profile.get("interests") else "general"
+    familiarity = user_profile.get("familiarity", 3)
+    level = user_profile.get("language_level", "Intermediate")
+
+    return f"""
+You are a friendly Korean culture tutor persona. Output VALID JSON only, strictly matching the provided response schema.
+
+User Profile:
+- Familiarity: {familiarity}/5
+- Language Level: {level}
+- Interests: {interests_str}
+
+Allowed interest slugs (use only when needed): k-pop, k-drama, food, language, history, humor, politics, beauty-fashion
+
+Checkpoints (analyze each independently; keep trigger keywords short, 1–2 words):
+{checkpoints}
+
+For EACH checkpoint, produce these fields:
+1) recap:
+   - compact: title; 2–4 bullets (<=100 chars each); voiceover one-liner (<=120 chars, optional)
+   - detailed: summary_short (<=120 chars); summary_main (2–3 sentences, <=320 chars);
+              key_points (0–4); terms (0–4, with ko/rom/gloss_en/sample_en?);
+              examples (0–2, translation_en focused; line_ko/line_rom optional);
+              share_seed optional with keys {{"claim","evidence","example","korean_term"}}
+2) tps:
+   - think: prompt (<=140 chars); guiding_questions (<=3); example_keywords (<=4);
+            note_template default ["claim","example","korean_term","reflection"]; timebox_seconds ≈ 30;
+            tts_line (<=120 chars, optional)
+   - share: prompt; report_template default ["claim","evidence","example","korean_term"];
+            self_check 2–4 items; tts_line optional
+3) quizzes: 1–2 items total
+   - kind ∈ {{"multiple_choice","open_ended"}}
+   - question (<=140 chars)
+   - If multiple_choice: 3–4 options; correct_option_index within range
+   - If open_ended: correct_answer_text (concise keywords); no options/index
+   - explanation (<=180 chars), hints up to 2 (text-only; no elimination style), short tags (<=5)
+4) follow_ups: 0–2 brief prompts
+
+Rules:
+- Primary language is English; include romanized Korean terms where relevant.
+- Keep trigger_keyword concise (1–2 words). Avoid quoting long transcript chunks.
+- Reflect user familiarity/level/interests when helpful.
+- Avoid redundancy and long paragraphs. Respect all length limits.
+- Return JSON only. No extra text before/after.
+"""

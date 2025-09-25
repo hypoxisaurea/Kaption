@@ -20,10 +20,11 @@ from google.generativeai.types import GenerationConfig as LegacyGenerationConfig
 
 from app.models.schemas import (
     UserProfile, VideoInfo, CulturalCheckpoint,
-    Explanation, AnalyzeResponse, DeepDive,
-    DeepDiveGenerateResponse, DeepDiveSection, DeepDiveExercise, ExerciseItem, CheckpointRef
+    Explanation, AnalyzeResponse,
+    DeepDiveGenerateResponse, DeepDiveSection, DeepDiveExercise, ExerciseItem, CheckpointRef,
+    DeepDiveBatchRequest, DeepDiveBatchResponse, DeepDiveItem, QuizItem, QuizOption, TPSActivity, TPSThink, TPSShare, Recap, RecapCompact, RecapDetailed
 )
-from app.core.prompts import get_cultural_analysis_prompt
+from app.core.prompts import get_cultural_analysis_prompt, get_deepdive_batch_prompt
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -108,30 +109,12 @@ class YouTubeCulturalAnalyzer:
                             "related_interests": {
                                 "type": "array",
                                 "items": {"type": "string"}
-                            },
-                            "deep_dive": {
-                                "type": "object",
-                                "properties": {
-                                    "type": {
-                                        "type": "string",
-                                        "enum": [
-                                            "cultural_etiquette",
-                                            "social_situation",
-                                            "language_practice",
-                                            "food_culture",
-                                            "pop_culture",
-                                            "traditional_culture"
-                                        ]
-                                    },
-                                    "reason": {"type": "string"}
-                                },
-                                "required": ["type", "reason"]
                             }
                         },
                         "required": [
                             "timestamp_seconds", "timestamp_formatted", "trigger_keyword",
                             "segment_stt", "scene_description", "context_title",
-                            "explanation", "related_interests", "deep_dive"
+                            "explanation", "related_interests"
                         ]
                     }
                 }
@@ -178,9 +161,7 @@ class YouTubeCulturalAnalyzer:
             # Preferred path: google.genai with file_data(file_uri=YouTube URL)
             if HAS_GENAI_CLIENT and self.client is not None:
                 logger.info(f"Processing YouTube URL via google.genai file_data: {youtube_url}")
-                # Extend response schema to include optional deep_dive
-                base_schema = self._get_response_schema()
-                schema = base_schema
+                schema = self._get_response_schema()
 
                 config = genai_types.GenerateContentConfig(
                     response_mime_type="application/json",
@@ -213,7 +194,7 @@ class YouTubeCulturalAnalyzer:
                 )
                 response = model.generate_content([youtube_url, prompt])
 
-            # 응답 파싱 - structured output이므로 직접 JSON으로 파싱 가능
+                # 응답 파싱 - structured output이므로 직접 JSON으로 파싱 가능
             try:
                 # Structured output은 이미 JSON 형식으로 반환됨
                 result_text = response.text
@@ -251,42 +232,6 @@ class YouTubeCulturalAnalyzer:
                             tip=cp_data.get('explanation', {}).get('tip', '')
                         )
 
-                        # Deep dive (optional)
-                        deep_dive_obj = None
-                        dd = cp_data.get('deep_dive')
-                        if isinstance(dd, dict):
-                            dd_type = dd.get('type')
-                            dd_reason = dd.get('reason')
-                            if isinstance(dd_type, str) and isinstance(dd_reason, str):
-                                try:
-                                    deep_dive_obj = DeepDive(type=dd_type, reason=dd_reason)
-                                except Exception as _:
-                                    deep_dive_obj = None
-                        # If still missing, attempt lightweight heuristic assignment
-                        if deep_dive_obj is None:
-                            text_blob = " ".join(filter(None, [
-                                cp_data.get('context_title', ''),
-                                cp_data.get('segment_stt', ''),
-                                cp_data.get('scene_description', ''),
-                                cp_data.get('explanation', {}).get('summary', ''),
-                                cp_data.get('explanation', {}).get('main', ''),
-                            ])).lower()
-                            dd_type_guess = "cultural_etiquette"
-                            if any(k in text_blob for k in ["grammar", "pattern", "pronunciation", "존댓말", "반말", "language"]):
-                                dd_type_guess = "language_practice"
-                            elif any(k in text_blob for k in ["food", "eat", "dining", "회식", "술", "식사", "밥"]):
-                                dd_type_guess = "food_culture"
-                            elif any(k in text_blob for k in ["k-pop", "idol", "maknae", "막내", "drama", "예능", "pop"]):
-                                dd_type_guess = "pop_culture"
-                            elif any(k in text_blob for k in ["tradition", "traditional", "명절", "제사", "한복"]):
-                                dd_type_guess = "traditional_culture"
-                            elif any(k in text_blob for k in ["senior", "junior", "선배", "후배", "직장", "학교", "상사", "사회"]):
-                                dd_type_guess = "social_situation"
-                            deep_dive_obj = DeepDive(
-                                type=dd_type_guess,
-                                reason=f"Auto-assigned based on checkpoint context: {cp_data.get('context_title', 'context')}"
-                            )
-
                         # CulturalCheckpoint 객체 생성
                         checkpoint = CulturalCheckpoint(
                             timestamp_seconds=timestamp_seconds,
@@ -297,7 +242,6 @@ class YouTubeCulturalAnalyzer:
                             context_title=cp_data.get('context_title', ''),
                             explanation=explanation,
                             related_interests=cp_data.get('related_interests', []),
-                            deep_dive=None,
                         )
                         checkpoints.append(checkpoint)
                     except Exception as e:
@@ -609,3 +553,236 @@ Requirements:
             ],
             resources=data.get("resources", []),
         )
+
+    def _get_deepdive_batch_schema(self) -> Dict[str, Any]:
+        """Structured JSON schema for DeepDive batch generation."""
+        return {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "checkpoint": {
+                                "type": "object",
+                                "properties": {
+                                    "timestamp_seconds": {"type": "integer"},
+                                    "timestamp_formatted": {"type": "string"},
+                                    "trigger_keyword": {"type": "string", "maxLength": 40},
+                                    "context_title": {"type": "string", "maxLength": 120},
+                                    "checkpoint_uid": {"type": "string"}
+                                },
+                                "required": ["timestamp_seconds","timestamp_formatted","trigger_keyword","context_title"]
+                            },
+                            "recap": {
+                                "type": "object",
+                                "properties": {
+                                    "compact": {
+                                        "type": "object",
+                                        "properties": {
+                                            "title": {"type": "string", "maxLength": 80},
+                                            "bullets": {"type": "array", "minItems": 2, "maxItems": 4, "items": {"type": "string", "maxLength": 100}},
+                                            "voiceover": {"type": "string", "maxLength": 120}
+                                        },
+                                        "required": ["title","bullets"]
+                                    },
+                                    "detailed": {
+                                        "type": "object",
+                                        "properties": {
+                                            "summary_short": {"type": "string", "maxLength": 120},
+                                            "summary_main": {"type": "string", "maxLength": 320},
+                                            "key_points": {"type": "array", "maxItems": 4, "items": {"type": "string", "maxLength": 100}},
+                                            "terms": {"type": "array", "maxItems": 4, "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "term_ko": {"type": "string", "maxLength": 32},
+                                                    "term_rom": {"type": "string", "maxLength": 48},
+                                                    "gloss_en": {"type": "string", "maxLength": 120},
+                                                    "sample_en": {"type": "string", "maxLength": 140}
+                                                },
+                                                "required": ["term_ko","term_rom","gloss_en"]
+                                            }},
+                                            "examples": {"type": "array", "maxItems": 2, "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "scene": {"type": "string", "maxLength": 100},
+                                                    "translation_en": {"type": "string", "maxLength": 160},
+                                                    "line_ko": {"type": "string", "maxLength": 80},
+                                                    "line_rom": {"type": "string", "maxLength": 100}
+                                                },
+                                                "required": ["scene","translation_en"]
+                                            }},
+                                            "share_seed": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "claim": {"type": "string", "maxLength": 140},
+                                                    "evidence": {"type": "string", "maxLength": 160},
+                                                    "example": {"type": "string", "maxLength": 160},
+                                                    "korean_term": {"type": "string", "maxLength": 60}
+                                                }
+                                            }
+                                        },
+                                        "required": ["summary_short","summary_main"]
+                                    }
+                                },
+                                "required": ["compact","detailed"]
+                            },
+                            "tps": {
+                                "type": "object",
+                                "properties": {
+                                    "think": {
+                                        "type": "object",
+                                        "properties": {
+                                            "prompt": {"type": "string", "maxLength": 140},
+                                            "guiding_questions": {"type": "array", "maxItems": 3, "items": {"type": "string", "maxLength": 120}},
+                                            "example_keywords": {"type": "array", "maxItems": 4, "items": {"type": "string", "maxLength": 24}},
+                                            "note_template": {"type": "array", "minItems": 2, "maxItems": 4, "items": {"type": "string", "maxLength": 24}},
+                                            "timebox_seconds": {"type": "integer", "minimum": 10, "maximum": 120},
+                                            "tts_line": {"type": "string", "maxLength": 120}
+                                        },
+                                        "required": ["prompt","timebox_seconds"]
+                                    },
+                                    "share": {
+                                        "type": "object",
+                                        "properties": {
+                                            "prompt": {"type": "string", "maxLength": 140},
+                                            "report_template": {"type": "array", "minItems": 3, "maxItems": 5, "items": {"type": "string", "maxLength": 24}},
+                                            "self_check": {"type": "array", "minItems": 2, "maxItems": 4, "items": {"type": "string", "maxLength": 100}},
+                                            "tts_line": {"type": "string", "maxLength": 120}
+                                        },
+                                        "required": ["prompt","report_template","self_check"]
+                                    }
+                                },
+                                "required": ["think","share"]
+                            },
+                            "quizzes": {
+                                "type": "array",
+                                "minItems": 1,
+                                "maxItems": 2,
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "kind": {"type": "string", "enum": ["multiple_choice","open_ended"]},
+                                        "question": {"type": "string", "maxLength": 140},
+                                        "options": {"type": "array", "minItems": 0, "maxItems": 4, "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "text": {"type": "string", "maxLength": 120}
+                                            },
+                                            "required": ["text"]
+                                        }},
+                                        "correct_option_index": {"type": "integer", "minimum": 0, "maximum": 3},
+                                        "correct_answer_text": {"type": "string", "maxLength": 140},
+                                        "explanation": {"type": "string", "maxLength": 180},
+                                        "hints": {"type": "array", "maxItems": 2, "items": {"type": "string", "maxLength": 100}},
+                                        "tags": {"type": "array", "maxItems": 5, "items": {"type": "string", "maxLength": 24}}
+                                    },
+                                    "required": ["kind","question","explanation"]
+                                }
+                            },
+                            "follow_ups": {"type": "array", "maxItems": 2, "items": {"type": "string", "maxLength": 140}}
+                        },
+                        "required": ["checkpoint","recap","tps","quizzes"]
+                    }
+                }
+            },
+            "required": ["items"]
+        }
+
+    async def generate_deep_dive_batch(self, user_profile: UserProfile, checkpoints: List[CulturalCheckpoint]) -> DeepDiveBatchResponse:
+        """Generate recap/TPS/quizzes for a list of checkpoints using structured output."""
+        if not checkpoints:
+            return DeepDiveBatchResponse(items=[])
+
+        # Build prompt
+        cp_payload = []
+        for cp in checkpoints:
+            cp_payload.append({
+                "timestamp_seconds": cp.timestamp_seconds,
+                "timestamp_formatted": cp.timestamp_formatted,
+                "trigger_keyword": cp.trigger_keyword,
+                "segment_stt": cp.segment_stt,
+                "scene_description": cp.scene_description,
+                "context_title": cp.context_title,
+                "related_interests": cp.related_interests,
+            })
+
+        prompt = get_deepdive_batch_prompt(user_profile.dict(), cp_payload)
+
+        # Structured output schema
+        schema = self._get_deepdive_batch_schema()
+
+        # Call Gemini
+        if HAS_GENAI_CLIENT and self.client is not None:
+            config = genai_types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=schema,
+            )
+            contents = genai_types.Content(parts=[genai_types.Part(text=prompt)])
+            response = self.client.models.generate_content(
+                model="models/gemini-2.5-flash",
+                contents=contents,
+                config=config,
+            )
+            text = response.text
+        else:
+            model = legacy_genai.GenerativeModel(
+                'gemini-2.5-flash',
+                generation_config=LegacyGenerationConfig(
+                    response_mime_type="application/json",
+                    response_schema=schema
+                )
+            )
+            resp = model.generate_content([prompt])
+            text = resp.text
+
+        # Parse
+        data = json.loads(text)
+
+        # Pydantic validation
+        result = DeepDiveBatchResponse(**data)
+
+        # Post-process: clip/validate
+        for item in result.items:
+            # ensure checkpoint_uid
+            if getattr(item.checkpoint, 'checkpoint_uid', None) in (None, ""):
+                item.checkpoint.checkpoint_uid = f"{item.checkpoint.timestamp_formatted}|{item.checkpoint.trigger_keyword}"
+
+            # recap limits (soft clip length in place)
+            item.recap.compact.bullets = item.recap.compact.bullets[:4]
+            if item.recap.detailed.examples:
+                item.recap.detailed.examples = item.recap.detailed.examples[:2]
+            if item.recap.detailed.terms:
+                item.recap.detailed.terms = item.recap.detailed.terms[:4]
+            if item.recap.detailed.key_points:
+                item.recap.detailed.key_points = item.recap.detailed.key_points[:4]
+
+            # quizzes
+            fixed_quizzes: List[QuizItem] = []
+            for q in item.quizzes[:2]:
+                if q.kind == "multiple_choice":
+                    if q.options is None:
+                        continue
+                    # dedupe & cap 4
+                    dedup = []
+                    seen = set()
+                    for opt in q.options:
+                        key = (opt.text or "").strip()
+                        if key and key not in seen:
+                            seen.add(key)
+                            dedup.append(opt)
+                        if len(dedup) >= 4:
+                            break
+                    q.options = dedup
+                    # index guard
+                    if q.correct_option_index is None or not (0 <= q.correct_option_index < len(q.options)):
+                        # default to first if invalid
+                        q.correct_option_index = 0 if q.options else None
+                # hints <= 2
+                q.hints = (q.hints or [])[:2]
+                fixed_quizzes.append(q)
+            item.quizzes = fixed_quizzes
+
+        return result

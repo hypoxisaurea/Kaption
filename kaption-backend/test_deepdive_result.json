@@ -1,0 +1,146 @@
+{
+  "items": [
+    {
+      "checkpoint": {
+        "timestamp_seconds": 38,
+        "timestamp_formatted": "00:38",
+        "trigger_keyword": "반장/banjang",
+        "context_title": "Banjang - Class President",
+        "checkpoint_uid": "banjang-38"
+      },
+      "recap": {
+        "compact": {
+          "title": "Understanding Banja ng (Class President)",
+          "bullets": [
+            "Banjang (반장) is the class president in Korean schools.",
+            "They assist teachers and represent their classmates.",
+            "This role involves leadership and responsibility within the classroom.",
+            "Often seen in K-dramas and K-Pop content, like Seventeen."
+          ],
+          "voiceover": "Learn about the Banjang, or class president, a key student leadership role in Korean schools and popular culture."
+        },
+        "detailed": {
+          "summary_short": "Banjang (반장) is the class president in Korean schools, a student leader who helps teachers and represents classmates.",
+          "summary_main": "In Korean schools, the Banjang (반장) is the elected class president. This student leader assists teachers with class management, relays important information, and serves as a representative for their classmates' interests. It's a respected position that requires strong organizational and communication skills.",
+          "key_points": [
+            "The Banjang is the student leader of a class.",
+            "They act as a crucial link between students and teachers.",
+            "Responsibilities include organizing class activities and delivering messages.",
+            "It's a position that often commands respect and can be competitive."
+          ],
+          "terms": [
+            {
+              "term_ko": "반장",
+              "term_rom": "banjang",
+              "gloss_en": "Class president",
+              "sample_en": "The banjang led the class meeting efficiently."
+            },
+            {
+              "term_ko": "학급",
+              "term_rom": "hakgeup",
+              "gloss_en": "Class (as in a group of students)",
+              "sample_en": "Our hakgeup is preparing for the school festival."
+            }
+          ],
+          "examples": [
+            {
+              "scene": "Seventeen member Seokmin (DK) is appointed as the class president.",
+              "translation_en": "Seventeen's Seokmin is the Banjang for the second term.",
+              "line_ko": "2기 반장 이석민",
+              "line_rom": "I-gi banjang Iseokmin"
+            }
+          ],
+          "share_seed": null
+        }
+      },
+      "tps": {
+        "think": {
+          "prompt": "Consider leadership roles in school. How does the Banjang (반장) role compare to student leadership positions you're familiar with?",
+          "guiding_questions": [
+            "What are common responsibilities across these roles?",
+            "What might be unique about the Banjang system?",
+            "How do these roles influence class dynamics or group harmony?"
+          ],
+          "example_keywords": [
+            "student council",
+            "group leader",
+            "prefect",
+            "monitor"
+          ],
+          "note_template": [
+            "claim",
+            "example",
+            "korean_term",
+            "reflection"
+          ],
+          "timebox_seconds": 45,
+          "tts_line": "Think about how the Banjang's duties compare to other student leadership roles you know."
+        },
+        "share": {
+          "prompt": "Share your thoughts on the Banjang's role. What aspects resonate with you, and how might it differ from student leadership in your experience?",
+          "report_template": [
+            "claim",
+            "evidence",
+            "example",
+            "korean_term"
+          ],
+          "self_check": [
+            "Did I clearly explain my comparison?",
+            "Did I use the term 'Banjang' correctly?",
+            "Did I mention specific duties or aspects?",
+            "Is my answer concise and focused?"
+          ],
+          "tts_line": "Share your observations on the Banjang's role and its comparison to leadership in your own context."
+        }
+      },
+      "quizzes": [
+        {
+          "kind": "multiple_choice",
+          "question": "What is the primary role of a Banjang (반장) in a Korean school context?",
+          "options": [
+            {
+              "text": "Teaching subjects to younger students"
+            },
+            {
+              "text": "Organizing school-wide festivals and events"
+            },
+            {
+              "text": "Assisting teachers and representing the class"
+            },
+            {
+              "text": "Managing the school's sports teams"
+            }
+          ],
+          "correct_option_index": 2,
+          "correct_answer_text": null,
+          "explanation": "The Banjang acts as the class president, primarily assisting the teacher with class management and representing their classmates' interests. They are not typically responsible for teaching, school-wide festivals, or managing sports teams as their main role.",
+          "hints": [],
+          "tags": [
+            "school",
+            "leadership",
+            "culture"
+          ]
+        },
+        {
+          "kind": "open_ended",
+          "question": "Given the K-Pop context of Seokmin being a 'Banjang', how might this role in a K-Pop group or variety show differ from a traditional school Banjang?",
+          "options": null,
+          "correct_option_index": null,
+          "correct_answer_text": "Symbolic or playful leadership; less formal duties; often for entertainment value or specific segment roles.",
+          "explanation": "In a K-Pop or variety show setting, 'Banjang' is often a symbolic, lighthearted title for a specific segment or to playfully highlight a member's leader-like qualities. It involves fewer formal duties and serves more for entertainment or narrative purposes compared to the structured responsibilities of a school class president.",
+          "hints": [],
+          "tags": [
+            "k-pop",
+            "variety show",
+            "leadership",
+            "role"
+          ]
+        }
+      ],
+      "follow_ups": [
+        "What are other student leadership roles in Korean schools, beyond Banjang?",
+        "Look for instances of 'Banjang' being used in K-dramas or K-Pop content. Does it always mean 'class president'?"
+      ]
+    }
+  ]
+}

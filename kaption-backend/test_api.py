@@ -49,7 +49,7 @@ async def test_analyzer():
             "profile": UserProfile(
                 familiarity=1,
                 language_level="Beginner",
-                interests=["K-Food", "K-Pop"]
+                interests=["food", "k-pop"]
             )
         },
         {
@@ -57,7 +57,7 @@ async def test_analyzer():
             "profile": UserProfile(
                 familiarity=3,
                 language_level="Intermediate",
-                interests=["Korean History", "K-Drama"]
+                interests=["history", "k-drama"]
             )
         },
         {
@@ -65,7 +65,7 @@ async def test_analyzer():
             "profile": UserProfile(
                 familiarity=5,
                 language_level="Advanced",
-                interests=["Traditional Culture", "Korean Language"]
+                interests=["history", "language"]
             )
         }
     ]
@@ -140,7 +140,7 @@ async def test_api_request():
     # API 서버가 실행 중인지 확인
     api_url = "http://localhost:8000"
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=httpx.Timeout(connect=10, read=120)) as client:
         # Health check
         try:
             response = await client.get(f"{api_url}/health")
@@ -152,11 +152,12 @@ async def test_api_request():
 
         # Analyze request
         request_data = {
-            "youtube_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            # README 예시(한국어 콘텐츠)로 테스트
+            "youtube_url": "https://www.youtube.com/watch?v=_iQ4DBMXHpk",
             "user_profile": {
                 "familiarity": 2,
                 "language_level": "Intermediate",
-                "interests": ["K-Food", "K-Drama"]
+                "interests": ["k-pop", "language"]
             }
         }
 
@@ -167,19 +168,98 @@ async def test_api_request():
             response = await client.post(
                 f"{api_url}/api/analyze",
                 json=request_data,
-                timeout=60.0  # 60초 타임아웃
+                timeout=httpx.Timeout(connect=10, read=120)
             )
 
             if response.status_code == 200:
                 result = response.json()
                 print(f"✅ Analysis successful!")
                 print(f"   Checkpoints found: {len(result.get('checkpoints', []))}")
+                # DeepDive Batch 테스트 (체크포인트가 있을 때만)
+                checkpoints = result.get('checkpoints', [])
+                if checkpoints:
+                    deepdive_req = {
+                        "user_profile": request_data["user_profile"],
+                        # 요청 크기 절감을 위해 첫 1~2개만 사용
+                        "checkpoints": checkpoints[:1]
+                    }
+                    print("\n📤 Sending deepdive batch request (1 checkpoint)...")
+                    dd_resp = await client.post(
+                        f"{api_url}/api/deepdive/batch",
+                        json=deepdive_req,
+                        timeout=httpx.Timeout(connect=10, read=120)
+                    )
+                    if dd_resp.status_code == 200:
+                        dd = dd_resp.json()
+                        items = dd.get("items", [])
+                        print(f"✅ DeepDive batch successful! items: {len(items)}")
+                        # 파일로 저장
+                        with open("test_deepdive_result.json", "w", encoding="utf-8") as f:
+                            json.dump(dd, f, ensure_ascii=False, indent=2)
+                        print("💾 DeepDive saved to: test_deepdive_result.json")
+                    else:
+                        print(f"❌ DeepDive batch failed: {dd_resp.status_code}")
+                        print(f"   Error: {dd_resp.text}")
+                else:
+                    print("⚠️ No checkpoints from analysis. Skipping deepdive batch test.")
             else:
                 print(f"❌ Request failed: {response.status_code}")
                 print(f"   Error: {response.text}")
 
         except Exception as e:
-            print(f"❌ Request failed: {e}")
+            print(f"❌ Request failed: {e!r}")
+
+
+async def test_deepdive_only(analysis_file: str = "test_result.json"):
+    """분석 결과 파일을 사용해 DeepDive 배치만 테스트"""
+    import httpx
+    api_url = "http://localhost:8000"
+
+    # 파일 로드
+    if not os.path.exists(analysis_file):
+        print(f"❌ analysis file not found: {analysis_file}")
+        print("   먼저 /api/analyze 결과를 파일로 저장해 주세요 (test_result.json)")
+        return
+
+    with open(analysis_file, "r", encoding="utf-8") as f:
+        analysis = json.load(f)
+
+    checkpoints = analysis.get("checkpoints", [])
+    if not checkpoints:
+        print("⚠️ No checkpoints in analysis file. Abort DeepDive test.")
+        return
+
+    # 기본 사용자 프로필 (파일에 없음)
+    user_profile = {
+        "familiarity": 3,
+        "language_level": "Intermediate",
+        "interests": ["k-pop", "language"],
+    }
+
+    deepdive_req = {
+        "user_profile": user_profile,
+        "checkpoints": checkpoints[:1],  # 1개로 테스트
+    }
+
+    async with httpx.AsyncClient(timeout=httpx.Timeout(connect=10, read=120)) as client:
+        try:
+            print("\n📤 Sending deepdive batch request from file (1 checkpoint)...")
+            resp = await client.post(
+                f"{api_url}/api/deepdive/batch",
+                json=deepdive_req,
+            )
+            if resp.status_code == 200:
+                dd = resp.json()
+                items = dd.get("items", [])
+                print(f"✅ DeepDive batch successful! items: {len(items)}")
+                with open("test_deepdive_result.json", "w", encoding="utf-8") as f:
+                    json.dump(dd, f, ensure_ascii=False, indent=2)
+                print("💾 DeepDive saved to: test_deepdive_result.json")
+            else:
+                print(f"❌ DeepDive batch failed: {resp.status_code}")
+                print(f"   Error: {resp.text}")
+        except Exception as e:
+            print(f"❌ DeepDive-only request failed: {e!r}")
 
 
 def main():
@@ -189,9 +269,14 @@ def main():
     parser = argparse.ArgumentParser(description="Kaption API Test Script")
     parser.add_argument(
         "--mode",
-        choices=["analyzer", "api", "both"],
+        choices=["analyzer", "api", "both", "deepdive"],
         default="analyzer",
-        help="Test mode: analyzer (direct test), api (API endpoint test), or both"
+        help="Test mode: analyzer (direct), api (endpoints), both, or deepdive (batch only using saved analysis file)"
+    )
+    parser.add_argument(
+        "--analysis-file",
+        default="test_result.json",
+        help="Path to saved analysis JSON file for --mode deepdive"
     )
 
     args = parser.parse_args()
@@ -205,6 +290,8 @@ def main():
 
     if args.mode in ["api", "both"]:
         asyncio.run(test_api_request())
+    if args.mode == "deepdive":
+        asyncio.run(test_deepdive_only(args.analysis_file))
 
 
 if __name__ == "__main__":

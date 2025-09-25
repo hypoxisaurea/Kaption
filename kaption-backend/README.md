@@ -4,9 +4,7 @@ Korean Cultural Context Analysis API for YouTube Videos
 
 ## 🎯 Overview
 
-Kaption은 YouTube 영상에서 한국 문화 요소를 자동으로 감지하고, 사용자의 한국어 레벨과 문화 친숙도에 맞춰 맞춤형 설명을 제공하는 AI 서비스입니다.
-
-소연이 화이팅!!
+Kaption은 YouTube 영상에서 한국 문화 요소를 자동으로 감지하고, 사용자의 한국어 레벨과 문화 친숙도에 맞춰 맞춤형 설명을 제공하는 AI 서비스입니다
 
 ## 🚀 Quick Start for Frontend Developers
 
@@ -82,8 +80,8 @@ Content-Type: application/json
   "youtube_url": "https://www.youtube.com/watch?v=VIDEO_ID",
   "user_profile": {
     "familiarity": 3,              // 1-5 (Korean culture familiarity)
-    "language_level": "intermediate", // "beginner" | "intermediate" | "advanced"
-    "interests": ["k-pop", "food"]    // User's interests
+    "language_level": "Intermediate", // "Beginner" | "Intermediate" | "Advanced"
+    "interests": ["k-pop", "food"]    // User's interests (slugs)
   }
 }
 ```
@@ -108,11 +106,7 @@ Content-Type: application/json
         "main": "Detailed cultural explanation tailored to user level",
         "tip": "Practical usage tip"
       },
-      "deep_dive": {
-        "type": "cultural_etiquette",  // Type of learning content
-        "reason": "Why this type was selected"
-      },
-      "related_interests": ["k-drama", "social culture"]
+      "related_interests": ["k-drama", "language"]
     }
   ],
   "analysis_id": "unique_session_id",
@@ -120,17 +114,61 @@ Content-Type: application/json
 }
 ```
 
-### Deep Dive Types
-The API categorizes cultural learning moments into 6 types:
+#### 3. DeepDive Batch (Recap/TPS/Quiz)
+```http
+POST /api/deepdive/batch
+Content-Type: application/json
+```
 
-| Type | Description |
-|------|------------|
-| `cultural_etiquette` | Korean social norms, hierarchy, respect |
-| `social_situation` | Real-life scenarios (workplace, school, gatherings) |
-| `language_practice` | Grammar patterns, pronunciation, vocabulary |
-| `food_culture` | Dining etiquette, Korean dishes, drinking culture |
-| `pop_culture` | K-pop, K-drama, entertainment, youth trends |
-| `traditional_culture` | Historical customs, festivals, traditional arts |
+**Request Body:**
+```json
+{
+  "user_profile": {
+    "familiarity": 3,
+    "language_level": "Intermediate",
+    "interests": ["k-pop", "food"]
+  },
+  "checkpoints": [
+    {
+      "timestamp_seconds": 125,
+      "timestamp_formatted": "02:05",
+      "trigger_keyword": "형/hyung",
+      "segment_stt": "정한아 형 여기 와봐요!",
+      "scene_description": "Younger male calling older male friend",
+      "context_title": "Korean Age Hierarchy - Hyung",
+      "related_interests": ["language", "k-pop"],
+      "explanation": { "summary": "", "main": "", "tip": "" }
+    }
+  ]
+}
+```
+
+**Response (shape):**
+```json
+{
+  "items": [
+    {
+      "checkpoint": {
+        "timestamp_seconds": 125,
+        "timestamp_formatted": "02:05",
+        "trigger_keyword": "형/hyung",
+        "context_title": "Korean Age Hierarchy - Hyung",
+        "checkpoint_uid": "02:05|형/hyung"
+      },
+      "recap": {
+        "compact": { "title": "...", "bullets": ["...","..."], "voiceover": "..." },
+        "detailed": { "summary_short": "...", "summary_main": "...", "key_points": ["..."], "terms": [], "examples": [], "share_seed": {"claim": "...", "evidence": "...", "example": "...", "korean_term": "..."} }
+      },
+      "tps": {
+        "think": { "prompt": "...", "guiding_questions": ["..."], "example_keywords": ["..."], "note_template": ["claim","example","korean_term","reflection"], "timebox_seconds": 30, "tts_line": "..." },
+        "share": { "prompt": "...", "report_template": ["claim","evidence","example","korean_term"], "self_check": ["...","..."], "tts_line": "..." }
+      },
+      "quizzes": [ { "kind": "multiple_choice", "question": "...", "options": [ { "text": "..." } ], "correct_option_index": 0, "explanation": "...", "hints": ["..."] } ],
+      "follow_ups": ["..."]
+    }
+  ]
+}
+```
 
 ### Error Responses
 
@@ -162,9 +200,26 @@ curl -X POST http://localhost:8000/api/analyze \
     "youtube_url": "https://www.youtube.com/watch?v=_iQ4DBMXHpk",
     "user_profile": {
       "familiarity": 2,
-      "language_level": "beginner",
-      "interests": ["k-pop", "culture"]
+      "language_level": "Beginner",
+      "interests": ["k-pop", "language"]
     }
+  }' | python3 -m json.tool
+
+# Test deepdive batch
+curl -X POST http://localhost:8000/api/deepdive/batch \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_profile": {"familiarity": 3, "language_level": "Intermediate", "interests": ["k-pop","food"]},
+    "checkpoints": [{
+      "timestamp_seconds": 125,
+      "timestamp_formatted": "02:05",
+      "trigger_keyword": "형/hyung",
+      "segment_stt": "정한아 형 여기 와봐요!",
+      "scene_description": "Younger male calling older male friend",
+      "context_title": "Korean Age Hierarchy - Hyung",
+      "related_interests": ["language","k-pop"],
+      "explanation": {"summary":"","main":"","tip":""}
+    }]
   }' | python3 -m json.tool
 ```
 
@@ -192,7 +247,7 @@ const result = await analyzeVideo(
   'https://www.youtube.com/watch?v=VIDEO_ID',
   {
     familiarity: 3,
-    language_level: 'intermediate',
+    language_level: 'Intermediate',
     interests: ['k-pop', 'food']
   }
 );
@@ -221,10 +276,8 @@ The API is configured to accept requests from:
 - `intermediate`: Can understand simple conversations
 - `advanced`: Fluent or near-fluent
 
-**Common Interests:**
-- `k-pop`, `k-drama`, `k-food`, `korean-history`
-- `traditional-culture`, `modern-culture`, `language-learning`
-- `business`, `travel`, `gaming`, `fashion`
+**Common Interests (slugs):**
+- `k-pop`, `k-drama`, `food`, `language`, `history`, `humor`, `politics`, `beauty-fashion`
 
 ## 📊 Response Data Structure
 
@@ -243,10 +296,6 @@ interface Checkpoint {
     summary: string;               // One-line summary
     main: string;                  // Detailed explanation
     tip: string;                   // Usage tip
-  };
-  deep_dive: {
-    type: DeepDiveType;           // Category of content
-    reason: string;                // Why this type was chosen
   };
   related_interests: string[];    // Matching user interests
 }
