@@ -25,30 +25,24 @@ function ContentModule({ checkpoint }: ContentModuleProps) {
     return (
         <div className="bg-white rounded-lg shadow-md p-6 mb-10">
             <div className="flex items-center justify-between mb-[6vh]">
-                <div className="text-[1.3rem] font-semibold text-black">
+                <div className="text-[1rem] font-bold text-black">
                     {checkpoint.timestamp_formatted}
                 </div>
-                <div className="border-2 border-gradient-to-br from-[#FF8C7A]/45 to-[#2EC4B6]/45 text-black px-3 py-1 rounded-full text-sm font-medium">
+                <div className="border-2 bg-[#2EC4B6]/45 text-black px-3 py-1 rounded-full text-sm font-medium">
                     {checkpoint.trigger_keyword}
                 </div>
             </div>
             
-            <div className="mb-[5vh]">
-                <p className="text-[1.2rem] text-[#1b1b1b] font-semibold">{checkpoint.context_title}</p>
+            <div className="mb-[3vh]">
+                <p className="text-[1.2rem] text-[#1b1b1b] font-spoqa font-bold">{checkpoint.context_title}</p>
             </div>
-            
-            {/* <div className="mb-4">
-                <h3 className="text-md font-medium text-gray-700 mb-2">요약</h3>
-                <p className="text-gray-600">{checkpoint.explanation.summary}</p>
-            </div>
-             */}
-            <div className="mb-4">
-                <h3 className="text-[1rem] font-medium text-gray-700 mb-2">상세 설명</h3>
+
+            <div className="mb-[6vh]">
                 <p className="text-gray-600">{checkpoint.explanation.main}</p>
             </div>
             
-            <div className="mb-4">
-                <h3 className="text-[1rem] font-medium text-gray-700 mb-2">실용 팁</h3>
+            <div className="mb-[6vh]">
+                <h3 className="text-[1rem] font-medium text-gray-700">tip!</h3>
                 <p className="text-gray-600">{checkpoint.explanation.tip}</p>
             </div>
             
