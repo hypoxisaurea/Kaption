@@ -74,7 +74,7 @@ function ContentPage() {
 
     return (
         <div
-            className={`w-full overflow-x-hidden transition-opacity duration-[350ms] ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+            className={`w-full bg-[#1b1b1b] overflow-x-hidden transition-opacity duration-[350ms] ${isVisible ? 'opacity-100' : 'opacity-0'}`}
             style={{ willChange: 'opacity' }}
         >
             <div className='w-full box-border flex justify-center px-10 py-4 overflow-x-hidden'>
@@ -97,9 +97,6 @@ function ContentPage() {
 
                     {analysisData && analysisData.checkpoints && (
                         <div className="mt-6">
-                            <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                                문화적 맥락 분석 결과
-                            </h2>
                             {analysisData.checkpoints.map((checkpoint, index) => (
                                 <ContentModule 
                                     key={`${checkpoint.timestamp_seconds}-${index}`}
