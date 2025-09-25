@@ -1,7 +1,7 @@
-import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import HoverOverlay from 'components/ContentPage/HoverOverlay';
-import useFadeIn from 'hooks/useFadeIn';
+import usePageTransition from 'hooks/usePageTransition';
 
 interface Explanation {
     summary: string;
@@ -22,8 +22,12 @@ interface Checkpoint {
 
 function DeepDivePage() {
     const { checkpointId } = useParams<{ checkpointId: string }>();
-    const navigate = useNavigate();
-    const isVisible = useFadeIn();
+    const { isVisible, navigateWithCardCollapse, startPageEnter, expandState } = usePageTransition();
+
+    // 페이지 진입 시 transition 시작
+    useEffect(() => {
+        startPageEnter();
+    }, [startPageEnter]);
 
     // 실제로는 체크포인트 ID를 기반으로 데이터를 가져와야 함
     // 현재는 임시 데이터 사용
@@ -43,16 +47,28 @@ function DeepDivePage() {
     };
 
     const handleBackClick = () => {
-        navigate('/content');
+        // 모달 라우트: 현재는 /content에서 state만 토글하므로 back으로 닫힘
+        window.history.back();
+    };
+
+    const getPageClass = () => {
+        const baseClass = "w-full overflow-x-hidden hide-scrollbar";
+        
+        switch (expandState) {
+            case 'entering':
+                return `${baseClass} card-expand-transition page-expand-entrance bg-white`;
+            case 'collapsing':
+                return `${baseClass} card-expand-transition page-collapse-collapsing bg-[#1b1b1b]`;
+            case 'idle':
+                return `${baseClass} card-expand-transition page-expand-entrance-active bg-white`;
+            default:
+                return `${baseClass} card-expand-transition page-expand-entrance-active bg-white`;
+        }
     };
 
     return (
-        <div
-            className={`w-full bg-[#1b1b1b] overflow-x-hidden hide-scrollbar transition-opacity duration-[350ms] ${isVisible ? 'opacity-100' : 'opacity-0'}`}
-            style={{
-                willChange: 'opacity'
-            }}
-        >
+        <div className={getPageClass()}>
+            {/* 모달 라우트 전환으로 fold 오버레이는 사용하지 않음 */}
             <div className='w-full box-border flex justify-center px-10 py-4 overflow-x-hidden'>
                 <div className='w-full min-w-0 max-w-md sm:max-w-lg lg:max-w-2xl'>
                     {/* 뒤로가기 버튼 */}

@@ -79,3 +79,136 @@
         display: none;  /* Chrome, Safari and Opera */
     }
 }
+
+/* 페이지 전환 효과 */
+@layer utilities {
+    .page-transition {
+        transition: opacity 350ms ease-in-out;
+        will-change: opacity;
+    }
+    
+    .page-transition-fade-out {
+        opacity: 0;
+    }
+    
+    .page-transition-fade-in {
+        opacity: 1;
+    }
+}
+
+/* 카드 확장 전환 효과 */
+@layer utilities {
+    .card-expand-transition {
+        transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+        will-change: transform, opacity;
+    }
+    
+    .card-expand-start {
+        transform: scale(1);
+        opacity: 1;
+    }
+    
+    .card-expand-fullscreen {
+        transform: scale(30);
+        opacity: 0;
+    }
+    
+    .page-expand-entrance {
+        transform: scale(0.01);
+        opacity: 0;
+    }
+    
+    .page-expand-entrance-active {
+        transform: scale(1);
+        opacity: 1;
+    }
+    
+    .page-collapse-start {
+        transform: scale(1);
+        opacity: 1;
+    }
+    
+    .page-collapse-collapsing {
+        transform: scale(0.01);
+        opacity: 0 !important;
+        background-color: #1b1b1b !important;
+        background: #1b1b1b !important;
+        visibility: hidden;
+        transition: transform 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94), 
+                   opacity 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                   background-color 200ms ease-in-out;
+    }
+}
+
+@layer utilities {
+  .fold-overlay {
+    position: fixed;
+    inset: 0;
+    background: white;
+    pointer-events: none;
+    z-index: 50;
+    transform-origin: center;
+    will-change: transform, opacity, border-radius;
+  }
+  .fold-overlay--hidden {
+    opacity: 0;
+    visibility: hidden;
+  }
+  .fold-overlay--animating {
+    transition: transform 360ms cubic-bezier(0.22, 0.61, 0.36, 1),
+                opacity 280ms ease-out,
+                border-radius 360ms ease;
+  }
+  .fold-overlay--with-delay {
+    transition-delay: 120ms, 120ms, 120ms;
+  }
+  .fold-overlay--to-card {
+    transform: scale(0.01);
+    opacity: 0.0;
+    border-radius: 24px;
+  }
+  /* Dark backdrop that fades in slightly earlier to avoid white flash */
+  .fold-backdrop {
+    position: fixed;
+    inset: 0;
+    background: #1b1b1b;
+    pointer-events: none;
+    z-index: 40;
+    opacity: 0;
+    transition: opacity 220ms ease-in-out;
+  }
+  .fold-backdrop--show {
+    opacity: 1;
+  }
+}
+
+/* Content 모듈 복귀 하이라이트 */
+@layer utilities {
+  .module-highlight {
+    box-shadow: 0 0 0 3px rgba(46, 196, 182, 0.8);
+    transition: box-shadow 300ms ease;
+  }
+}
+
+/* Modal enter/exit animations */
+@layer utilities {
+  .modal-backdrop {
+    opacity: 0;
+    transition: opacity 220ms ease;
+  }
+  .modal-backdrop--open {
+    opacity: 1;
+  }
+
+  .modal-panel {
+    transform: translateY(10px) scale(0.985);
+    opacity: 0;
+    transition: transform 280ms cubic-bezier(0.22, 0.61, 0.36, 1),
+               opacity 220ms ease-out;
+    will-change: transform, opacity;
+  }
+  .modal-panel--open {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}

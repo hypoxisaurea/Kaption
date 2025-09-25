@@ -1,23 +1,42 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { VideoInfo } from 'components';
 import ContentModule from 'components/ContentPage/ContentModule';
-import useFadeIn from 'hooks/useFadeIn';
+import DeepDiveModal from 'components/ContentPage/DeepDiveModal';
+import usePageTransition from 'hooks/usePageTransition';
 import { AnalyzeResponse, fetchAndStoreCurrentVideoInfo, analyzeCurrentVideo } from 'services/chromeVideo';
 import sampleAnalysis from 'assets/data/sample_analysis_result.json';
 
 
 function ContentPage() {
-    const isVisible = useFadeIn();
+    const { isVisible, navigateWithCardExpand, expandState } = usePageTransition();
+    const location = useLocation();
     const navigate = useNavigate();
     const [analysisData, setAnalysisData] = useState<AnalyzeResponse | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const handleCheckpointClick = (checkpoint: any) => {
-        // 체크포인트 ID를 기반으로 상세 페이지로 이동
-        const checkpointId = `${checkpoint.timestamp_seconds}-${checkpoint.trigger_keyword}`;
-        navigate(`/deepdive/${encodeURIComponent(checkpointId)}`);
+        const clickedElementId = `checkpoint-${checkpoint.timestamp_seconds}-${checkpoint.trigger_keyword}`;
+        const scrollY = window.scrollY;
+        // 동일 경로(/content)에 모달 state만 push하여 배경 유지
+        navigateWithCardExpand('/content', {
+            from: 'content',
+            clickedElementId,
+            scrollY,
+            modalCheckpoint: checkpoint
+        });
+    };
+
+    const getPageClass = () => {
+        const baseClass = "w-full bg-[#1b1b1b] overflow-x-hidden hide-scrollbar";
+        
+        // 접힘 완료 후 나타나는 효과
+        if (expandState === 'idle') {
+            return `${baseClass} card-expand-transition page-expand-entrance-active`;
+        }
+        
+        return `${baseClass} page-transition ${isVisible ? 'page-transition-fade-in' : 'page-transition-fade-out'}`;
     };
 
     useEffect(() => {
@@ -91,15 +110,28 @@ function ContentPage() {
         };
 
         loadAnalysisData();
+
+        // 뒤로 돌아왔을 때: state로 전달된 스크롤 위치와 타겟 모듈로 복원
+        const navState = (window.history.state && (window.history.state as any).usr) || undefined;
+        if (navState && navState.from === 'deepdive' && navState.clickedElementId) {
+            const target = document.getElementById(navState.clickedElementId);
+            if (target) {
+                target.scrollIntoView({ behavior: 'auto', block: 'center' });
+                // 하이라이트 효과
+                target.classList.add('module-highlight');
+                setTimeout(() => target.classList.remove('module-highlight'), 800);
+            } else if (typeof navState.scrollY === 'number') {
+                window.scrollTo({ top: navState.scrollY, behavior: 'auto' });
+            }
+        }
     }, []);
 
+    // 모달 상태: location.state?.modalCheckpoint
+    const navState = (location.state as any) || undefined;
+    const modalCheckpoint = navState?.modalCheckpoint as any | undefined;
+
     return (
-        <div
-            className={`w-full bg-[#1b1b1b] overflow-x-hidden hide-scrollbar transition-opacity duration-[350ms] ${isVisible ? 'opacity-100' : 'opacity-0'}`}
-            style={{
-                willChange: 'opacity'
-            }}
-        >
+        <div className={getPageClass()}>
             <div className='w-full box-border flex justify-center px-10 py-4 overflow-x-hidden'>
                 <div className='w-full min-w-0 max-w-md sm:max-w-lg lg:max-w-2xl'>
                     <VideoInfo />
@@ -140,6 +172,9 @@ function ContentPage() {
                     )}
                 </div>
             </div>
+            {modalCheckpoint && (
+                <DeepDiveModal checkpoint={modalCheckpoint} onClose={() => navigate(-1)} />
+            )}
         </div>
     )
 }
