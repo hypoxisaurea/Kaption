@@ -10,6 +10,10 @@ function VideoInfo() {
         try {
             setLoading(true);
             setError(null);
+            if (!chrome?.storage?.local) {
+                setVideoInfo(null);
+                return;
+            }
             const data = await chrome.storage.local.get('currentVideoInfo');
             const next = data.currentVideoInfo as unknown;
             setVideoInfo(isVideoInfo(next) ? next : null);
@@ -32,9 +36,13 @@ function VideoInfo() {
             }
         };
 
-        chrome.storage.onChanged.addListener(listener);
+        if (chrome?.storage?.onChanged?.addListener) {
+            chrome.storage.onChanged.addListener(listener);
+        }
         return () => {
-            chrome.storage.onChanged.removeListener(listener);
+            if (chrome?.storage?.onChanged?.removeListener) {
+                chrome.storage.onChanged.removeListener(listener);
+            }
         };
     }, [loadInfo]);
 
@@ -46,7 +54,7 @@ function VideoInfo() {
                 )}
                 {!loading && !error && !videoInfo && (
                     <div className='text-sm text-gray-600'>
-                        영상 정보가 없습니다. 재생 중인 탭에서 Play를 눌러 주세요.
+                        영상 정보가 없습니다. 확장프로그램 환경 외 실행 시 숨김 처리됩니다.
                     </div>
                 )}
                 {!loading && !error && videoInfo && (

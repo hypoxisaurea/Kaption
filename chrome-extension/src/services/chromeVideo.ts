@@ -119,7 +119,7 @@ export async function extractVideoInfoFromActiveTab(
               if (types?.includes("VideoObject")) {
                 const keywords = Array.isArray(obj?.keywords)
                   ? obj.keywords.join(", ")
-                  : (obj?.keywords ?? null);
+                  : obj?.keywords ?? null;
                 return {
                   name: obj?.name ?? null,
                   description: obj?.description ?? null,
@@ -202,13 +202,25 @@ export async function extractVideoInfoFromActiveTab(
 export async function saveVideoInfoToStorage(
   data: VideoInfoData
 ): Promise<void> {
-  await chrome.storage.local.set({ currentVideoInfo: data });
+  if (chrome?.storage?.local) {
+    await chrome.storage.local.set({ currentVideoInfo: data });
+  } else {
+    try {
+      localStorage.setItem("currentVideoInfo", JSON.stringify(data));
+    } catch {}
+  }
 }
 
 export async function saveAnalysisResultToStorage(
   result: AnalyzeResponse
 ): Promise<void> {
-  await chrome.storage.local.set({ lastAnalysisResult: result });
+  if (chrome?.storage?.local) {
+    await chrome.storage.local.set({ lastAnalysisResult: result });
+  } else {
+    try {
+      localStorage.setItem("lastAnalysisResult", JSON.stringify(result));
+    } catch {}
+  }
 }
 
 export type UserProfilePayload = {
