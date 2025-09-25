@@ -37,7 +37,6 @@ function VideoInfo() {
         try {
             setLoading(true);
             setError(null);
-<<<<<<< HEAD
             if (!chrome?.storage?.local) {
                 setVideoInfo(null);
                 return;
@@ -45,16 +44,6 @@ function VideoInfo() {
             const data = await chrome.storage.local.get('currentVideoInfo');
             const next = data.currentVideoInfo as unknown;
             setVideoInfo(isVideoInfo(next) ? next : null);
-=======
-            if (isExtensionRuntime()) {
-                const data = await chrome.storage.local.get('currentVideoInfo');
-                const next = data.currentVideoInfo as unknown;
-                setVideoInfo(isVideoInfo(next) ? next : null);
-            } else {
-                // 개발 서버(npm start)에서 더미 정보 사용
-                setVideoInfo(getDevDummyVideoInfo());
-            }
->>>>>>> 31a7e28 ([STYLE] change content modul design)
         } catch (e) {
             setError('영상 정보를 불러오는 중 오류가 발생했습니다.');
         } finally {
@@ -75,7 +64,6 @@ function VideoInfo() {
                 }
             };
 
-<<<<<<< HEAD
         if (chrome?.storage?.onChanged?.addListener) {
             chrome.storage.onChanged.addListener(listener);
         }
@@ -84,14 +72,6 @@ function VideoInfo() {
                 chrome.storage.onChanged.removeListener(listener);
             }
         };
-=======
-            chrome.storage.onChanged.addListener(listener);
-            return () => {
-                chrome.storage.onChanged.removeListener(listener);
-            };
-        }
-        return;
->>>>>>> 31a7e28 ([STYLE] change content modul design)
     }, [loadInfo]);
 
     return (
