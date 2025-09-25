@@ -1,5 +1,6 @@
 import React from 'react'
 import HoverOverlay from './HoverOverlay'
+import usePageTransition from 'hooks/usePageTransition'
 
 interface Explanation {
     summary: string;
@@ -24,9 +25,22 @@ interface ContentModuleProps {
 }
 
 function ContentModule({ checkpoint, onClick }: ContentModuleProps) {
+    const { expandState } = usePageTransition();
+    
     const handleClick = () => {
         if (onClick) {
             onClick(checkpoint);
+        }
+    };
+
+    const getCardClass = () => {
+        const baseClass = "bg-white font-spoqa rounded-[3.5vw] px-[6vw] py-[7vw] mb-10";
+        
+        switch (expandState) {
+            case 'fullscreen':
+                return `${baseClass} card-expand-transition card-expand-fullscreen`;
+            default:
+                return `${baseClass} card-expand-transition card-expand-start`;
         }
     };
 
@@ -34,7 +48,7 @@ function ContentModule({ checkpoint, onClick }: ContentModuleProps) {
         <HoverOverlay 
             onClick={handleClick}
         >
-            <div className="bg-white font-spoqa rounded-[3.5vw] px-[6vw] py-[7vw] mb-10">
+            <div id={`checkpoint-${checkpoint.timestamp_seconds}-${checkpoint.trigger_keyword}`} className={getCardClass()}>
             <div className="flex items-start justify-between mb-[6vh]">
                 <div className="text-[1rem] font-bold text-[#1b1b1b]">
                     {checkpoint.timestamp_formatted}

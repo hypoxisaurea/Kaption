@@ -16,12 +16,17 @@ function App() {
 
   return (
     <div className="flex h-screen w-full flex-col">
-      {showColorHeader && <ColorHeader />}
-      {showWhiteHeader && <WhiteHeader />}
-      <div
-        className={`relative flex-1 overflow-y-auto transition-opacity duration-[350ms] ${isVisible ? 'opacity-100' : 'opacity-0'}`}
-        style={{ willChange: 'opacity' }}
-      >
+      {showColorHeader && (
+        <div className={`page-transition ${isVisible ? 'page-transition-fade-in' : 'page-transition-fade-out'}`}>
+          <ColorHeader />
+        </div>
+      )}
+      {showWhiteHeader && (
+        <div className={`page-transition ${isVisible ? 'page-transition-fade-in' : 'page-transition-fade-out'}`}>
+          <WhiteHeader />
+        </div>
+      )}
+      <div className={`relative flex-1 overflow-y-auto page-transition ${isVisible ? 'page-transition-fade-in' : 'page-transition-fade-out'}`}>
         <Outlet />
       </div>
     </div>
