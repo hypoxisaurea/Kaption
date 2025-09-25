@@ -5,7 +5,7 @@ import {
   Outlet, // 중첩된 라우트를 렌더링하기 위한 컴포넌트
   useLocation,
 } from 'react-router-dom';
-import { Header } from 'components';
+import { WhiteHeader } from 'components';
 import useFadeIn from 'hooks/useFadeIn';
 
 function App() {
@@ -16,7 +16,7 @@ function App() {
 
   return (
     <div className="flex h-screen w-full flex-col">
-      {showHeader && <Header />}
+      {showHeader && <WhiteHeader />}
       <div
         className={`relative flex-1 overflow-y-auto transition-opacity duration-[350ms] ${isVisible ? 'opacity-100' : 'opacity-0'}`}
         style={{ willChange: 'opacity' }}
