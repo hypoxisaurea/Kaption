@@ -64,14 +64,16 @@ function VideoInfo() {
                 }
             };
 
-        if (chrome?.storage?.onChanged?.addListener) {
-            chrome.storage.onChanged.addListener(listener);
-        }
-        return () => {
-            if (chrome?.storage?.onChanged?.removeListener) {
-                chrome.storage.onChanged.removeListener(listener);
+            if (chrome?.storage?.onChanged?.addListener) {
+                chrome.storage.onChanged.addListener(listener);
             }
-        };
+            
+            return () => {
+                if (chrome?.storage?.onChanged?.removeListener) {
+                    chrome.storage.onChanged.removeListener(listener);
+                }
+            };
+        }
     }, [loadInfo]);
 
     return (
