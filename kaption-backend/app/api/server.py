@@ -15,13 +15,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 
-from app.models.schemas import AnalyzeRequest, AnalyzeResponse
+from app.models.schemas import (
+    AnalyzeRequest, AnalyzeResponse,
+    DeepDiveGenerateRequest, DeepDiveGenerateResponse,
+    CulturalCheckpoint, UserProfile
+)
 from app.services.youtube_analyzer import YouTubeCulturalAnalyzer
 
 # 환경 설정
 load_dotenv()
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG if os.getenv("DEBUG") else logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
@@ -127,11 +131,17 @@ async def analyze_video(request: AnalyzeRequest):
         문화 맥락 체크포인트가 포함된 분석 결과
     """
     logger.info(f"Received analysis request for: {request.youtube_url}")
-    logger.info(f"User profile: {request.user_profile}")
+    logger.info(f"User profile: familiarity={request.user_profile.familiarity} "
+                f"language_level='{request.user_profile.language_level}' "
+                f"interests={request.user_profile.interests}")
+
+    # Request ID 생성 (추적용)
+    request_id = str(uuid4())[:8]
+    logger.info(f"[{request_id}] Starting analysis for video")
 
     # Analyzer 초기화 확인
     if not analyzer:
-        logger.error("Analyzer not initialized")
+        logger.error(f"[{request_id}] Analyzer not initialized - service unavailable")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Analysis service is not available. Please check API configuration."
@@ -139,29 +149,68 @@ async def analyze_video(request: AnalyzeRequest):
 
     try:
         # 영상 분석 수행
+        logger.info(f"[{request_id}] Calling analyzer.analyze_video...")
         result = await analyzer.analyze_video(
             youtube_url=request.youtube_url,
             user_profile=request.user_profile
         )
+        logger.info(f"[{request_id}] Analyzer returned with status: {result.status}")
 
         # 에러 상태 확인
         if result.status == "error":
-            logger.error(f"Analysis failed: {result.error}")
+            logger.error(f"[{request_id}] Analysis failed with error: {result.error}")
+            logger.error(f"[{request_id}] Error details - Status: {result.status}, Error message: {result.error}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=result.error or "Failed to analyze video"
             )
 
-        logger.info(f"Analysis completed successfully with {len(result.checkpoints)} checkpoints")
+        logger.info(f"[{request_id}] Analysis completed successfully")
+        logger.info(f"[{request_id}] Results - Video title: {result.video_info.title}, "
+                    f"Duration: {result.video_info.total_duration}s, "
+                    f"Checkpoints: {len(result.checkpoints)}")
+
+        # 첫 몇 개의 체크포인트 로깅
+        if result.checkpoints:
+            logger.debug(f"[{request_id}] First checkpoint: {result.checkpoints[0].context_title} "
+                        f"at {result.checkpoints[0].timestamp_formatted}")
+
         return result
 
-    except HTTPException:
+    except HTTPException as he:
+        logger.warning(f"[{request_id}] HTTPException raised: {he.detail}")
         raise
     except Exception as e:
-        logger.error(f"Unexpected error during analysis: {e}")
+        logger.error(f"[{request_id}] Unexpected error during analysis: {type(e).__name__}: {str(e)}")
+        logger.exception(f"[{request_id}] Full exception trace:")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An unexpected error occurred: {str(e)}"
+        )
+
+
+@app.post("/api/deepdive", response_model=DeepDiveGenerateResponse)
+async def generate_deepdive(content: DeepDiveGenerateRequest):
+    """Generate rich deep-dive tutoring content for a given checkpoint using Gemini"""
+    if not analyzer:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Analysis service is not available"
+        )
+
+    try:
+        result = await analyzer.generate_deep_dive_content(
+            checkpoint=content.checkpoint,
+            user_profile=content.user_profile
+        )
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"DeepDive generation failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate deep dive content: {str(e)}"
         )
 
 

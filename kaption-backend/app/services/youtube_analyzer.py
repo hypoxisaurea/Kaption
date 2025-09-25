@@ -5,12 +5,23 @@ import re
 import json
 import logging
 from typing import Optional, Dict, Any, List
-from google import genai
-from google.genai import types
+
+# New Google GenAI client (preferred)
+try:
+    from google import genai as genai_client
+    from google.genai import types as genai_types
+    HAS_GENAI_CLIENT = True
+except Exception:
+    HAS_GENAI_CLIENT = False
+
+# Legacy Generative AI SDK (fallback)
+import google.generativeai as legacy_genai
+from google.generativeai.types import GenerationConfig as LegacyGenerationConfig
 
 from app.models.schemas import (
     UserProfile, VideoInfo, CulturalCheckpoint,
-    Explanation, AnalyzeResponse
+    Explanation, AnalyzeResponse, DeepDive,
+    DeepDiveGenerateResponse, DeepDiveSection, DeepDiveExercise, ExerciseItem, CheckpointRef
 )
 from app.core.prompts import get_cultural_analysis_prompt
 
@@ -27,9 +38,14 @@ class YouTubeCulturalAnalyzer:
         if not self.api_key:
             raise ValueError("GOOGLE_API_KEY not found in environment")
 
-        # Google Gemini Client 생성
-        self.client = genai.Client(api_key=self.api_key)
-        logger.info("Gemini API client initialized for cultural context analysis")
+        # Initialize preferred google.genai client; set up legacy fallback
+        if HAS_GENAI_CLIENT:
+            self.client = genai_client.Client(api_key=self.api_key)
+            logger.info("Initialized google.genai Client for cultural context analysis")
+        else:
+            legacy_genai.configure(api_key=self.api_key)
+            self.client = None
+            logger.info("Initialized legacy google.generativeai configuration (fallback mode)")
 
     def extract_video_id(self, url: str) -> Optional[str]:
         """YouTube URL에서 video ID 추출"""
@@ -55,6 +71,73 @@ class YouTubeCulturalAnalyzer:
             return f"{hours:02d}:{minutes:02d}:{secs:02d}"
         else:
             return f"{minutes:02d}:{secs:02d}"
+
+    def _get_response_schema(self):
+        """Get structured output schema for Gemini API"""
+        return {
+            "type": "object",
+            "properties": {
+                "video_info": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "total_duration": {"type": "number"}
+                    },
+                    "required": ["title", "total_duration"]
+                },
+                "checkpoints": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "timestamp_seconds": {"type": "integer"},
+                            "timestamp_formatted": {"type": "string"},
+                            "trigger_keyword": {"type": "string"},
+                            "segment_stt": {"type": "string"},
+                            "scene_description": {"type": "string"},
+                            "context_title": {"type": "string"},
+                            "explanation": {
+                                "type": "object",
+                                "properties": {
+                                    "summary": {"type": "string"},
+                                    "main": {"type": "string"},
+                                    "tip": {"type": "string"}
+                                },
+                                "required": ["summary", "main", "tip"]
+                            },
+                            "related_interests": {
+                                "type": "array",
+                                "items": {"type": "string"}
+                            },
+                            "deep_dive": {
+                                "type": "object",
+                                "properties": {
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "cultural_etiquette",
+                                            "social_situation",
+                                            "language_practice",
+                                            "food_culture",
+                                            "pop_culture",
+                                            "traditional_culture"
+                                        ]
+                                    },
+                                    "reason": {"type": "string"}
+                                },
+                                "required": ["type", "reason"]
+                            }
+                        },
+                        "required": [
+                            "timestamp_seconds", "timestamp_formatted", "trigger_keyword",
+                            "segment_stt", "scene_description", "context_title",
+                            "explanation", "related_interests", "deep_dive"
+                        ]
+                    }
+                }
+            },
+            "required": ["video_info", "checkpoints"]
+        }
 
     async def analyze_video(
         self,
@@ -90,56 +173,53 @@ class YouTubeCulturalAnalyzer:
             # 사용자 프로필 기반 프롬프트 생성
             prompt = get_cultural_analysis_prompt(user_profile.dict())
 
-            # Gemini API 호출
-            logger.info("Calling Gemini API for video analysis...")
+            logger.info("Calling Gemini API with structured output...")
 
-            # Add JSON instruction to prompt for better results
-            json_prompt = prompt + "\n\nREMEMBER: Output ONLY valid JSON, nothing else."
+            # Preferred path: google.genai with file_data(file_uri=YouTube URL)
+            if HAS_GENAI_CLIENT and self.client is not None:
+                logger.info(f"Processing YouTube URL via google.genai file_data: {youtube_url}")
+                # Extend response schema to include optional deep_dive
+                base_schema = self._get_response_schema()
+                schema = base_schema
 
-            response = self.client.models.generate_content(
-                model='models/gemini-2.0-flash-exp',
-                contents=types.Content(
+                config = genai_types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    response_schema=schema,
+                )
+
+                contents = genai_types.Content(
                     parts=[
-                        types.Part(
-                            file_data=types.FileData(file_uri=youtube_url)
+                        genai_types.Part(
+                            file_data=genai_types.FileData(file_uri=youtube_url)
                         ),
-                        types.Part(text=json_prompt)
+                        genai_types.Part(text=prompt),
                     ]
                 )
-            )
 
-            # 응답 파싱
+                response = self.client.models.generate_content(
+                    model="models/gemini-2.5-flash",
+                    contents=contents,
+                    config=config,
+                )
+            else:
+                # Fallback: legacy google.generativeai (may be less reliable for URL ingestion)
+                logger.info(f"Processing YouTube URL via legacy SDK as plain content: {youtube_url}")
+                model = legacy_genai.GenerativeModel(
+                    'gemini-2.5-flash',
+                    generation_config=LegacyGenerationConfig(
+                        response_mime_type="application/json",
+                        response_schema=self._get_response_schema()
+                    )
+                )
+                response = model.generate_content([youtube_url, prompt])
+
+            # 응답 파싱 - structured output이므로 직접 JSON으로 파싱 가능
             try:
-                # JSON 응답 파싱
+                # Structured output은 이미 JSON 형식으로 반환됨
                 result_text = response.text
-                logger.info(f"Raw response length: {len(result_text)} characters")
+                logger.info(f"Received structured response length: {len(result_text)} characters")
 
-                # Clean up response text
-                result_text = result_text.strip()
-
-                # JSON 블록 추출 (```json ... ``` 형식 처리)
-                if '```json' in result_text:
-                    json_match = re.search(r'```json\s*(.*?)\s*```', result_text, re.DOTALL)
-                    if json_match:
-                        result_text = json_match.group(1)
-                elif '```' in result_text:
-                    # Handle plain code blocks
-                    json_match = re.search(r'```\s*(.*?)\s*```', result_text, re.DOTALL)
-                    if json_match:
-                        result_text = json_match.group(1)
-
-                # Remove any non-JSON content before the first {
-                if result_text and not result_text.strip().startswith('{'):
-                    json_start = result_text.find('{')
-                    if json_start != -1:
-                        result_text = result_text[json_start:]
-
-                # Remove any non-JSON content after the last }
-                if result_text:
-                    json_end = result_text.rfind('}')
-                    if json_end != -1:
-                        result_text = result_text[:json_end + 1]
-
+                # JSON 파싱
                 result_data = json.loads(result_text)
                 logger.info(f"Parsed JSON response successfully")
                 logger.debug(f"Response data keys: {list(result_data.keys())}")
@@ -171,6 +251,42 @@ class YouTubeCulturalAnalyzer:
                             tip=cp_data.get('explanation', {}).get('tip', '')
                         )
 
+                        # Deep dive (optional)
+                        deep_dive_obj = None
+                        dd = cp_data.get('deep_dive')
+                        if isinstance(dd, dict):
+                            dd_type = dd.get('type')
+                            dd_reason = dd.get('reason')
+                            if isinstance(dd_type, str) and isinstance(dd_reason, str):
+                                try:
+                                    deep_dive_obj = DeepDive(type=dd_type, reason=dd_reason)
+                                except Exception as _:
+                                    deep_dive_obj = None
+                        # If still missing, attempt lightweight heuristic assignment
+                        if deep_dive_obj is None:
+                            text_blob = " ".join(filter(None, [
+                                cp_data.get('context_title', ''),
+                                cp_data.get('segment_stt', ''),
+                                cp_data.get('scene_description', ''),
+                                cp_data.get('explanation', {}).get('summary', ''),
+                                cp_data.get('explanation', {}).get('main', ''),
+                            ])).lower()
+                            dd_type_guess = "cultural_etiquette"
+                            if any(k in text_blob for k in ["grammar", "pattern", "pronunciation", "존댓말", "반말", "language"]):
+                                dd_type_guess = "language_practice"
+                            elif any(k in text_blob for k in ["food", "eat", "dining", "회식", "술", "식사", "밥"]):
+                                dd_type_guess = "food_culture"
+                            elif any(k in text_blob for k in ["k-pop", "idol", "maknae", "막내", "drama", "예능", "pop"]):
+                                dd_type_guess = "pop_culture"
+                            elif any(k in text_blob for k in ["tradition", "traditional", "명절", "제사", "한복"]):
+                                dd_type_guess = "traditional_culture"
+                            elif any(k in text_blob for k in ["senior", "junior", "선배", "후배", "직장", "학교", "상사", "사회"]):
+                                dd_type_guess = "social_situation"
+                            deep_dive_obj = DeepDive(
+                                type=dd_type_guess,
+                                reason=f"Auto-assigned based on checkpoint context: {cp_data.get('context_title', 'context')}"
+                            )
+
                         # CulturalCheckpoint 객체 생성
                         checkpoint = CulturalCheckpoint(
                             timestamp_seconds=timestamp_seconds,
@@ -180,7 +296,8 @@ class YouTubeCulturalAnalyzer:
                             scene_description=cp_data.get('scene_description', ''),
                             context_title=cp_data.get('context_title', ''),
                             explanation=explanation,
-                            related_interests=cp_data.get('related_interests', [])
+                            related_interests=cp_data.get('related_interests', []),
+                            deep_dive=None,
                         )
                         checkpoints.append(checkpoint)
                     except Exception as e:
@@ -197,9 +314,15 @@ class YouTubeCulturalAnalyzer:
                 )
 
             except json.JSONDecodeError as e:
-                logger.error(f"Failed to parse JSON response: {e}")
-                # Fallback: 기본 응답 생성
-                return self._create_fallback_response(response.text, video_id)
+                logger.error(f"Failed to parse structured JSON response: {e}")
+                logger.error(f"Raw response: {response.text[:500]}...")
+                # Structured output에서는 JSON 파싱 실패가 드물지만, fallback 제공
+                return AnalyzeResponse(
+                    video_info=VideoInfo(title="Parse Error", total_duration=0),
+                    checkpoints=[],
+                    status="error",
+                    error=f"Failed to parse API response: {str(e)}"
+                )
 
         except Exception as e:
             error_msg = str(e)
@@ -298,20 +421,191 @@ class YouTubeCulturalAnalyzer:
             [00:00:10] 다음 발언 내용
             """
 
-            response = self.client.models.generate_content(
-                model='models/gemini-2.0-flash-exp',
-                contents=types.Content(
+            logger.info(f"Extracting transcript from YouTube URL: {youtube_url}")
+
+            if HAS_GENAI_CLIENT and getattr(self, 'client', None) is not None:
+                contents = genai_types.Content(
                     parts=[
-                        types.Part(
-                            file_data=types.FileData(file_uri=youtube_url)
+                        genai_types.Part(
+                            file_data=genai_types.FileData(file_uri=youtube_url)
                         ),
-                        types.Part(text=prompt)
+                        genai_types.Part(text=prompt),
                     ]
                 )
-            )
+                response = self.client.models.generate_content(
+                    model="models/gemini-2.5-flash",
+                    contents=contents,
+                )
+            else:
+                # Legacy fallback
+                model = legacy_genai.GenerativeModel('gemini-2.5-flash')
+                response = model.generate_content([youtube_url, prompt])
 
             return response.text
 
         except Exception as e:
             logger.error(f"Error extracting transcript: {e}")
             return None
+
+
+    async def generate_deep_dive_content(
+        self,
+        checkpoint: CulturalCheckpoint,
+        user_profile: UserProfile,
+    ) -> DeepDiveGenerateResponse:
+        """Use Gemini to generate rich deep-dive tutoring content based on a checkpoint"""
+        # Build structured schema according to DeepDiveGenerateResponse
+        schema = {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "cultural_etiquette",
+                        "social_situation",
+                        "language_practice",
+                        "food_culture",
+                        "pop_culture",
+                        "traditional_culture",
+                    ],
+                },
+                "checkpoint": {
+                    "type": "object",
+                    "properties": {
+                        "timestamp_seconds": {"type": "integer"},
+                        "timestamp_formatted": {"type": "string"},
+                        "trigger_keyword": {"type": "string"},
+                        "context_title": {"type": "string"},
+                    },
+                    "required": ["timestamp_seconds", "timestamp_formatted", "trigger_keyword", "context_title"],
+                },
+                "title": {"type": "string"},
+                "summary": {"type": "string"},
+                "learning_objectives": {"type": "array", "items": {"type": "string"}},
+                "sections": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "heading": {"type": "string"},
+                            "detail": {"type": "string"},
+                        },
+                        "required": ["heading", "detail"],
+                    },
+                },
+                "exercises": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "kind": {"type": "string", "enum": ["quiz", "roleplay", "practice"]},
+                            "prompt": {"type": "string"},
+                            "items": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "question": {"type": ["string", "null"]},
+                                        "options": {"type": ["array", "null"], "items": {"type": "string"}},
+                                        "answer": {"type": ["string", "null"]},
+                                        "explanation": {"type": ["string", "null"]},
+                                        "scenario": {"type": ["string", "null"]},
+                                        "dialogue": {"type": ["array", "null"], "items": {"type": "string"}},
+                                        "tips": {"type": ["array", "null"], "items": {"type": "string"}},
+                                        "pattern": {"type": ["string", "null"]},
+                                        "examples": {"type": ["array", "null"], "items": {"type": "string"}},
+                                        "task": {"type": ["string", "null"]},
+                                    },
+                                },
+                            },
+                        },
+                        "required": ["kind", "prompt", "items"],
+                    },
+                },
+                "resources": {"type": "array", "items": {"type": "string"}},
+            },
+            "required": ["type", "checkpoint", "title", "summary", "learning_objectives", "sections", "exercises", "resources"],
+        }
+
+        # Build prompt using checkpoint and user profile
+        level = user_profile.language_level
+        familiarity = user_profile.familiarity
+        interests = ", ".join(user_profile.interests) if user_profile.interests else "general"
+        dd_type = checkpoint.deep_dive.type
+
+        system_prompt = f"""
+You are a helpful Korean culture tutor. Create interactive deep-dive learning content for a given checkpoint.
+Requirements:
+- Output valid JSON only.
+- Tailor depth to familiarity {familiarity}/5 and language level {level}.
+- Align examples with interests: {interests}.
+- Deep-dive type: {dd_type}.
+- Provide concrete, actionable, and culturally accurate content.
+"""
+
+        checkpoint_brief = {
+            "timestamp_seconds": checkpoint.timestamp_seconds,
+            "timestamp_formatted": checkpoint.timestamp_formatted,
+            "trigger_keyword": checkpoint.trigger_keyword,
+            "context_title": checkpoint.context_title,
+        }
+
+        # Preferred client path
+        if HAS_GENAI_CLIENT and self.client is not None:
+            config = genai_types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=schema,
+            )
+            contents = genai_types.Content(
+                parts=[
+                    genai_types.Part(text=json.dumps({
+                        "system": system_prompt,
+                        "checkpoint": checkpoint_brief,
+                        "explanation": checkpoint.explanation.dict(),
+                        "scene_description": checkpoint.scene_description,
+                        "segment_stt": checkpoint.segment_stt,
+                    }))
+                ]
+            )
+            resp = self.client.models.generate_content(
+                model="models/gemini-2.5-flash",
+                contents=contents,
+                config=config,
+            )
+            data = json.loads(resp.text)
+        else:
+            # Fallback legacy
+            model = legacy_genai.GenerativeModel('gemini-2.5-flash',
+                generation_config=LegacyGenerationConfig(
+                    response_mime_type="application/json",
+                    response_schema=schema,
+                )
+            )
+            resp = model.generate_content([
+                json.dumps({
+                    "system": system_prompt,
+                    "checkpoint": checkpoint_brief,
+                    "explanation": checkpoint.explanation.dict(),
+                    "scene_description": checkpoint.scene_description,
+                    "segment_stt": checkpoint.segment_stt,
+                })
+            ])
+            data = json.loads(resp.text)
+
+        # Map to Pydantic response
+        return DeepDiveGenerateResponse(
+            type=data["type"],
+            checkpoint=CheckpointRef(**data["checkpoint"]),
+            title=data["title"],
+            summary=data["summary"],
+            learning_objectives=data.get("learning_objectives", []),
+            sections=[DeepDiveSection(**s) for s in data.get("sections", [])],
+            exercises=[
+                DeepDiveExercise(
+                    kind=e["kind"],
+                    prompt=e["prompt"],
+                    items=[ExerciseItem(**it) for it in e.get("items", [])]
+                ) for e in data.get("exercises", [])
+            ],
+            resources=data.get("resources", []),
+        )
