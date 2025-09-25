@@ -7,7 +7,12 @@ import './index.css';
 import App from 'App';
 import reportWebVitals from 'reportWebVitals';
 
-import { LandingPage, StartPage, OptionPage, ContentPage, MyPage } from 'pages';
+import { LandingPage, StartPage, OptionPage, ContentPage, MyPage, LoadingPage, DeepDivePage } from 'pages';
+
+// 개발 편의: ?route=/content 처럼 쿼리로 초기 경로를 지정할 수 있게 함
+const params = new URLSearchParams(window.location.search);
+const paramRoute = params.get('route');
+const initialRoute = paramRoute && paramRoute.startsWith('/') ? paramRoute : '/';
 
 const router = createMemoryRouter([
   {
@@ -26,7 +31,10 @@ const router = createMemoryRouter([
         path: '/option',
         element: <OptionPage />,
       },
-      
+      {
+        path: '/loading',
+        element: <LoadingPage />,
+      },
       {
         path: '/my',
         element: <MyPage />,
@@ -34,10 +42,14 @@ const router = createMemoryRouter([
       {
         path: '/content',
         element: <ContentPage />,
+      },
+      {
+        path: '/deepdive/:checkpointId',
+        element: <DeepDivePage />,
       }
     ],
   },
-]);
+], { initialEntries: [initialRoute] });
 
 
 const root = ReactDOM.createRoot(

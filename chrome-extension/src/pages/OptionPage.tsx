@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Logo, BlackButton as Button, StarRating } from 'components';
 import Dropdown from 'components/OptionPage/Dropdown';
 import { fetchAndStoreCurrentVideoInfo, analyzeCurrentVideo, saveAnalysisResultToStorage, UserProfilePayload } from 'services/chromeVideo';
+import sampleAnalysis from 'assets/data/sample_analysis_result.json';
 
 function OptionPage() {
     const navigate = useNavigate();
@@ -56,17 +57,16 @@ function OptionPage() {
 
     const handleConfirmClick = async () => {
         try {
-            const info = await fetchAndStoreCurrentVideoInfo();
-            if (!info) {
-                alert('이 페이지에서 재생 중인 영상을 찾지 못했습니다.');
-                return;
-            }
-
             const language = resolveLanguageLevel(languageLevelId);
             if (!familiarity || !language) {
                 alert('Familiarity와 Language Level을 선택해 주세요.');
                 return;
             }
+
+            // 로딩 페이지로 이동 후 비동기 처리 수행
+            navigate('/loading');
+
+            const info = await fetchAndStoreCurrentVideoInfo();
 
             const interests = selectedInterests.map(id => normalizeInterest(interestLabelById(id)));
 
@@ -77,16 +77,31 @@ function OptionPage() {
             };
 
             console.groupCollapsed('[OptionPage] Analyze Submit');
-            console.log('video_url', info.url);
+            console.log('video_url', info?.url);
             console.log('profile', profile);
             console.groupEnd();
 
-            const result = await analyzeCurrentVideo(info.url, profile);
-            await saveAnalysisResultToStorage(result);
-            navigate('/content');
+            if (!info) {
+                console.warn('[OptionPage] 영상 정보를 찾지 못해 더미 데이터로 이동합니다.');
+                await saveAnalysisResultToStorage(sampleAnalysis as any);
+                navigate('/content');
+                return;
+            }
+
+            try {
+                const result = await analyzeCurrentVideo(info.url, profile);
+                await saveAnalysisResultToStorage(result);
+                navigate('/content');
+            } catch (e) {
+                console.error('[OptionPage] Analyze 실패, 더미 데이터로 대체합니다.', e);
+                await saveAnalysisResultToStorage(sampleAnalysis as any);
+                navigate('/content');
+            }
         } catch (error) {
             console.error(error);
-            alert('영상 분석 중 오류가 발생했습니다. 백엔드 서버가 실행 중인지 확인해 주세요.');
+            // 네트워크 등 상위 오류 시에도 더미 데이터로 이동
+            await saveAnalysisResultToStorage(sampleAnalysis as any);
+            navigate('/content');
         }
     };
 

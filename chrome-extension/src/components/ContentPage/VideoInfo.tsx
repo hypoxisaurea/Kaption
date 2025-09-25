@@ -1,5 +1,32 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { VideoInfoData, isVideoInfo } from 'types/video';
+import sampleAnalysis from 'assets/data/sample_analysis_result.json';
+
+function isExtensionRuntime(): boolean {
+    return typeof chrome !== 'undefined' && !!chrome.storage && !!chrome.storage.local;
+}
+
+function getDevDummyVideoInfo(): VideoInfoData {
+    const title = sampleAnalysis?.video_info?.title || 'Sample Video Title';
+    const total = sampleAnalysis?.video_info?.total_duration || 180;
+    const url = 'https://www.youtube.com/watch?v=_iQ4DBMXHpk';
+    const videoId = new URLSearchParams(new URL(url).search).get('v');
+    const thumbnailUrl = videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : null;
+    return {
+        url,
+        title,
+        metaTitle: title,
+        metaDescription: null,
+        metaKeywords: null,
+        thumbnailUrl,
+        duration: total,
+        currentTime: 0,
+        paused: true,
+        playbackRate: 1,
+        width: 1280,
+        height: 720,
+    };
+}
 function VideoInfo() {
     const [videoInfo, setVideoInfo] = useState<null | VideoInfoData>(null);
     const [loading, setLoading] = useState<boolean>(true);
@@ -10,6 +37,10 @@ function VideoInfo() {
         try {
             setLoading(true);
             setError(null);
+            if (!chrome?.storage?.local) {
+                setVideoInfo(null);
+                return;
+            }
             const data = await chrome.storage.local.get('currentVideoInfo');
             const next = data.currentVideoInfo as unknown;
             setVideoInfo(isVideoInfo(next) ? next : null);
@@ -23,19 +54,26 @@ function VideoInfo() {
     useEffect(() => {
         loadInfo();
 
-        const listener = (changes: Record<string, { oldValue?: unknown; newValue?: unknown }>, areaName: string) => {
-            if (areaName !== 'local') return;
-            if ('currentVideoInfo' in changes) {
-                const change = changes.currentVideoInfo;
-                const next = change?.newValue as unknown;
-                setVideoInfo(isVideoInfo(next) ? next : null);
-            }
-        };
+        if (isExtensionRuntime()) {
+            const listener = (changes: Record<string, { oldValue?: unknown; newValue?: unknown }>, areaName: string) => {
+                if (areaName !== 'local') return;
+                if ('currentVideoInfo' in changes) {
+                    const change = changes.currentVideoInfo;
+                    const next = change?.newValue as unknown;
+                    setVideoInfo(isVideoInfo(next) ? next : null);
+                }
+            };
 
-        chrome.storage.onChanged.addListener(listener);
-        return () => {
-            chrome.storage.onChanged.removeListener(listener);
-        };
+            if (chrome?.storage?.onChanged?.addListener) {
+                chrome.storage.onChanged.addListener(listener);
+            }
+            
+            return () => {
+                if (chrome?.storage?.onChanged?.removeListener) {
+                    chrome.storage.onChanged.removeListener(listener);
+                }
+            };
+        }
     }, [loadInfo]);
 
     return (
@@ -46,7 +84,7 @@ function VideoInfo() {
                 )}
                 {!loading && !error && !videoInfo && (
                     <div className='text-sm text-gray-600'>
-                        영상 정보가 없습니다. 재생 중인 탭에서 Play를 눌러 주세요.
+                        영상 정보가 없습니다. 확장프로그램 환경 외 실행 시 숨김 처리됩니다.
                     </div>
                 )}
                 {!loading && !error && videoInfo && (

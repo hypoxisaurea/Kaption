@@ -1,4 +1,5 @@
 import React from 'react'
+import HoverOverlay from './HoverOverlay'
 
 interface Explanation {
     summary: string;
@@ -19,58 +20,50 @@ interface Checkpoint {
 
 interface ContentModuleProps {
     checkpoint: Checkpoint;
+    onClick?: (checkpoint: Checkpoint) => void;
 }
 
-function ContentModule({ checkpoint }: ContentModuleProps) {
+function ContentModule({ checkpoint, onClick }: ContentModuleProps) {
+    const handleClick = () => {
+        if (onClick) {
+            onClick(checkpoint);
+        }
+    };
+
     return (
-        <div className="bg-white rounded-lg shadow-md p-6 mb-4">
-            <div className="flex items-center justify-between mb-4">
-                <div className="text-lg font-semibold text-gray-800">
+        <HoverOverlay 
+            onClick={handleClick}
+        >
+            <div className="bg-white font-spoqa rounded-[3.5vw] px-[6vw] py-[7vw] mb-10">
+            <div className="flex items-start justify-between mb-[6vh]">
+                <div className="text-[1rem] font-bold text-[#1b1b1b]">
                     {checkpoint.timestamp_formatted}
                 </div>
-                <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                <div className="max-w-[30vw] border-2 bg-[#2EC4B6]/45 px-[3vw] py-[0.6vh] rounded-full text-[0.8rem] font-regular">
                     {checkpoint.trigger_keyword}
                 </div>
             </div>
             
-            <div className="mb-4">
-                <h3 className="text-md font-medium text-gray-700 mb-2">발화 내용</h3>
-                <p className="text-gray-600 italic">"{checkpoint.segment_stt}"</p>
+            <div className="mb-[3vh]">
+                <p className="text-[1.2rem] text-[#1b1b1b] font-bold">{checkpoint.context_title}</p>
+            </div>
+
+            <div className="mb-[6vh]">
+                <p className="text-[#1b1b1b] text-[0.9rem] font-light leading-relaxed">{checkpoint.explanation.main}</p>
             </div>
             
-            <div className="mb-4">
-                <h3 className="text-md font-medium text-gray-700 mb-2">장면 설명</h3>
-                <p className="text-gray-600">{checkpoint.scene_description}</p>
-            </div>
-            
-            <div className="mb-4">
-                <h3 className="text-md font-medium text-gray-700 mb-2">문화적 맥락</h3>
-                <p className="text-gray-600 font-medium">{checkpoint.context_title}</p>
-            </div>
-            
-            <div className="mb-4">
-                <h3 className="text-md font-medium text-gray-700 mb-2">요약</h3>
-                <p className="text-gray-600">{checkpoint.explanation.summary}</p>
-            </div>
-            
-            <div className="mb-4">
-                <h3 className="text-md font-medium text-gray-700 mb-2">상세 설명</h3>
-                <p className="text-gray-600">{checkpoint.explanation.main}</p>
-            </div>
-            
-            <div className="mb-4">
-                <h3 className="text-md font-medium text-gray-700 mb-2">실용 팁</h3>
-                <p className="text-gray-600">{checkpoint.explanation.tip}</p>
+            <div className="mb-[4vh]">
+                <h3 className="text-[0.95rem] font-medium text-[#1b1b1b]">tip!</h3>
+                <p className="text-[#1b1b1b] text-[0.9rem] font-light leading-relaxed">{checkpoint.explanation.tip}</p>
             </div>
             
             {checkpoint.related_interests && checkpoint.related_interests.length > 0 && (
                 <div>
-                    <h3 className="text-md font-medium text-gray-700 mb-2">관련 관심사</h3>
                     <div className="flex flex-wrap gap-2">
                         {checkpoint.related_interests.map((interest, index) => (
                             <span 
                                 key={index}
-                                className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm"
+                                className="bg-[#f4f4f4] text-[#1b1b1b] px-[3vw] py-[0.6vh] rounded-[3.5vw] text-[0.75rem] font-light"
                             >
                                 {interest}
                             </span>
@@ -78,7 +71,8 @@ function ContentModule({ checkpoint }: ContentModuleProps) {
                     </div>
                 </div>
             )}
-        </div>
+            </div>
+        </HoverOverlay>
     )
 }
 

@@ -28,15 +28,21 @@ export type AnalyzeResponse = {
   error?: string | null;
 };
 
-const YOUTUBE_URL_PATTERN = "*://*.youtube.com/*";
+const YOUTUBE_URL_PATTERN = [
+  "*://*.youtube.com/*",
+  "*://youtube.com/*",
+  "*://*.youtu.be/*",
+  "*://youtu.be/*",
+];
 
 export async function getActiveYouTubeTab(): Promise<ChromeTab | null> {
   if (!chrome?.tabs) return null;
 
+  // chrome.tabs.query 의 url 필드는 string | string[] 모두 허용
   const tabs = await chrome.tabs.query({
     active: true,
     currentWindow: true,
-    url: YOUTUBE_URL_PATTERN,
+    url: YOUTUBE_URL_PATTERN as unknown as string | string[],
   });
 
   return tabs?.[0] ?? null;
@@ -119,7 +125,7 @@ export async function extractVideoInfoFromActiveTab(
               if (types?.includes("VideoObject")) {
                 const keywords = Array.isArray(obj?.keywords)
                   ? obj.keywords.join(", ")
-                  : (obj?.keywords ?? null);
+                  : obj?.keywords ?? null;
                 return {
                   name: obj?.name ?? null,
                   description: obj?.description ?? null,
@@ -202,13 +208,25 @@ export async function extractVideoInfoFromActiveTab(
 export async function saveVideoInfoToStorage(
   data: VideoInfoData
 ): Promise<void> {
-  await chrome.storage.local.set({ currentVideoInfo: data });
+  if (chrome?.storage?.local) {
+    await chrome.storage.local.set({ currentVideoInfo: data });
+  } else {
+    try {
+      localStorage.setItem("currentVideoInfo", JSON.stringify(data));
+    } catch {}
+  }
 }
 
 export async function saveAnalysisResultToStorage(
   result: AnalyzeResponse
 ): Promise<void> {
-  await chrome.storage.local.set({ lastAnalysisResult: result });
+  if (chrome?.storage?.local) {
+    await chrome.storage.local.set({ lastAnalysisResult: result });
+  } else {
+    try {
+      localStorage.setItem("lastAnalysisResult", JSON.stringify(result));
+    } catch {}
+  }
 }
 
 export type UserProfilePayload = {

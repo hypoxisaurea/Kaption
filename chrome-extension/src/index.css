@@ -52,11 +52,30 @@
     html, body, #root {
         height: 100%;
         margin: 0;
+        overflow-y: auto;
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar,
+    #root::-webkit-scrollbar {
+        display: none;
     }
     body {
         font-family: "SpoqaHanSansNeo", sans-serif;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
         font-smooth: never;
+    }
+}
+
+/* 스크롤바 숨김 */
+@layer utilities {
+    .hide-scrollbar {
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
+    }
+    .hide-scrollbar::-webkit-scrollbar {
+        display: none;  /* Chrome, Safari and Opera */
     }
 }
