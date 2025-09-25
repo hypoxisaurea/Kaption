@@ -42,6 +42,7 @@ Analysis Guidelines:
 2. Record each cultural element with accurate timestamps
 3. Adjust explanations based on user's level and interests
 4. IMPORTANT: Respond in ENGLISH as the primary language, but include Korean terms with explanations
+5. Do not include any additional tutoring metadata; the deep-dive content will be generated later by another endpoint.
 
 Cultural Elements to Look For:
 - Honorific culture (언니/unnie, 오빠/oppa, 선배/sunbae, 이모님/imo-nim, etc.)

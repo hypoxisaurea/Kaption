@@ -15,7 +15,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 
-from app.models.schemas import AnalyzeRequest, AnalyzeResponse
+from app.models.schemas import (
+    AnalyzeRequest, AnalyzeResponse,
+    DeepDiveGenerateRequest, DeepDiveGenerateResponse,
+    CulturalCheckpoint, UserProfile
+)
 from app.services.youtube_analyzer import YouTubeCulturalAnalyzer
 
 # 환경 설정
@@ -182,6 +186,31 @@ async def analyze_video(request: AnalyzeRequest):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An unexpected error occurred: {str(e)}"
+        )
+
+
+@app.post("/api/deepdive", response_model=DeepDiveGenerateResponse)
+async def generate_deepdive(content: DeepDiveGenerateRequest):
+    """Generate rich deep-dive tutoring content for a given checkpoint using Gemini"""
+    if not analyzer:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Analysis service is not available"
+        )
+
+    try:
+        result = await analyzer.generate_deep_dive_content(
+            checkpoint=content.checkpoint,
+            user_profile=content.user_profile
+        )
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"DeepDive generation failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate deep dive content: {str(e)}"
         )
 
 

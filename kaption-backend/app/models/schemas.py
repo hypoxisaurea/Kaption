@@ -29,6 +29,22 @@ class Explanation(BaseModel):
     tip: str = Field(..., description="Additional tips based on language level/familiarity")
 
 
+DeepDiveType = Literal[
+    "cultural_etiquette",
+    "social_situation",
+    "language_practice",
+    "food_culture",
+    "pop_culture",
+    "traditional_culture",
+]
+
+
+class DeepDive(BaseModel):
+    """Additional interactive learning/tutoring metadata for a checkpoint"""
+    type: DeepDiveType = Field(..., description="Predefined deep dive category")
+    reason: str = Field(..., description="Why this deep dive category was selected")
+
+
 class CulturalCheckpoint(BaseModel):
     """Cultural/linguistic context checkpoint"""
     timestamp_seconds: int = Field(..., description="Scene timestamp in seconds")
@@ -42,6 +58,57 @@ class CulturalCheckpoint(BaseModel):
         default_factory=list,
         description="Related user interests for this context"
     )
+
+
+class CheckpointRef(BaseModel):
+    """Minimal reference to the originating checkpoint"""
+    timestamp_seconds: int
+    timestamp_formatted: str
+    trigger_keyword: str
+    context_title: str
+
+
+class DeepDiveSection(BaseModel):
+    heading: str
+    detail: str
+
+
+class ExerciseItem(BaseModel):
+    # Quiz-style
+    question: Optional[str] = None
+    options: Optional[List[str]] = None
+    answer: Optional[str] = None
+    explanation: Optional[str] = None
+    # Roleplay/social scenarios
+    scenario: Optional[str] = None
+    dialogue: Optional[List[str]] = None
+    tips: Optional[List[str]] = None
+    # Practice/language
+    pattern: Optional[str] = None
+    examples: Optional[List[str]] = None
+    task: Optional[str] = None
+
+
+class DeepDiveExercise(BaseModel):
+    kind: Literal["quiz", "roleplay", "practice"]
+    prompt: str
+    items: List[ExerciseItem] = Field(default_factory=list)
+
+
+class DeepDiveGenerateRequest(BaseModel):
+    checkpoint: CulturalCheckpoint
+    user_profile: UserProfile
+
+
+class DeepDiveGenerateResponse(BaseModel):
+    type: DeepDiveType
+    checkpoint: CheckpointRef
+    title: str
+    summary: str
+    learning_objectives: List[str] = Field(default_factory=list)
+    sections: List[DeepDiveSection] = Field(default_factory=list)
+    exercises: List[DeepDiveExercise] = Field(default_factory=list)
+    resources: List[str] = Field(default_factory=list)
 
 
 class VideoInfo(BaseModel):
