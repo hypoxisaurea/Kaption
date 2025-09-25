@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom';
 import { VideoInfo } from 'components';
 import ContentModule from 'components/ContentPage/ContentModule';
 import useFadeIn from 'hooks/useFadeIn';
@@ -8,9 +9,16 @@ import sampleAnalysis from 'assets/data/sample_analysis_result.json';
 
 function ContentPage() {
     const isVisible = useFadeIn();
+    const navigate = useNavigate();
     const [analysisData, setAnalysisData] = useState<AnalyzeResponse | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const handleCheckpointClick = (checkpoint: any) => {
+        // 체크포인트 ID를 기반으로 상세 페이지로 이동
+        const checkpointId = `${checkpoint.timestamp_seconds}-${checkpoint.trigger_keyword}`;
+        navigate(`/deepdive/${encodeURIComponent(checkpointId)}`);
+    };
 
     useEffect(() => {
         const loadAnalysisData = async () => {
@@ -20,6 +28,12 @@ function ContentPage() {
 
                 // 현재 YouTube 탭에서 비디오 정보 가져오기 (없어도 진행)
                 const videoInfo = await fetchAndStoreCurrentVideoInfo();
+                if (!videoInfo) {
+                    console.warn('[ContentPage] 활성 YouTube 비디오를 찾지 못했습니다. 샘플 데이터로 진행합니다.');
+                    setAnalysisData(sampleAnalysis as AnalyzeResponse);
+                    setError(null);
+                    return;
+                }
 
                 // 사용자 프로필 (임시 데이터 - 실제로는 사용자 설정에서 가져와야 함)
                 const userProfile = {
@@ -81,8 +95,10 @@ function ContentPage() {
 
     return (
         <div
-            className={`w-full bg-[#1b1b1b] overflow-x-hidden transition-opacity duration-[350ms] ${isVisible ? 'opacity-100' : 'opacity-0'}`}
-            style={{ willChange: 'opacity' }}
+            className={`w-full bg-[#1b1b1b] overflow-x-hidden hide-scrollbar transition-opacity duration-[350ms] ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+            style={{
+                willChange: 'opacity'
+            }}
         >
             <div className='w-full box-border flex justify-center px-10 py-4 overflow-x-hidden'>
                 <div className='w-full min-w-0 max-w-md sm:max-w-lg lg:max-w-2xl'>
@@ -107,7 +123,8 @@ function ContentPage() {
                             {analysisData.checkpoints.map((checkpoint, index) => (
                                 <ContentModule 
                                     key={`${checkpoint.timestamp_seconds}-${index}`}
-                                    checkpoint={checkpoint} 
+                                    checkpoint={checkpoint}
+                                    onClick={handleCheckpointClick}
                                 />
                             ))}
                         </div>
