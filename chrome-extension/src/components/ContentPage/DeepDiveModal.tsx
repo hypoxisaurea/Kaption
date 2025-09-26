@@ -1,12 +1,11 @@
 /* eslint-disable tailwindcss/classnames-order, tailwindcss/no-unnecessary-arbitrary-value */
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import LogoWhite from 'assets/images/logo/logo_white.png';
 import floatingTaki from 'assets/images/character/floating_taki.png';
 import studyTaki from 'assets/images/character/study_taki.png';
 import taki from 'assets/images/character/taki.png';
 import useDeepDiveStages from 'hooks/useDeepDiveStages';
- 
+import closeButton from 'assets/images/icon/button_close.png';
 
 interface Explanation {
   summary: string;
@@ -84,26 +83,21 @@ function DeepDiveModal({ checkpoint, deepDiveItem, onClose }: DeepDiveModalProps
   }, [attemptResult, stage]);
 
   return createPortal((
-    <div className="fixed inset-0 z-50">
-      {/* Backdrop */}
-      <div className={`absolute inset-0 bg-[#1b1b1b]/70 modal-backdrop modal-backdrop--open`} onClick={onClose} />
+    <div className="fixed w-full h-screen inset-0 z-50">
 
       {/* Fullscreen Panel */}
-      <div className={`absolute inset-0 bg-[#1b1b1b] font-spoqa flex flex-col overflow-hidden modal-panel modal-panel--open`}>
+      <div className={`absolute w-full h-screen inset-0 bg-white font-spoqa flex flex-col overflow-hidden modal-panel modal-panel--open`}>
         {/* Header */}
-        <div className="shrink-0 flex items-center justify-between px-4 py-3 bg-[#1b1b1b]/90">
-          <img src={LogoWhite} alt="Logo" className="block h-auto w-[6vw] shrink-0" />
-          <button
+        <div className="shrink-0 flex items-center justify-between px-4 py-3">
+          <img src={closeButton}
             onClick={onClose}
-            className="text-white text-[0.95rem] px-3 py-1 rounded hover:bg-white/10 transition-colors"
-          >
-            Close ✕
-          </button>
+            className="w-[2vw] h-auto"
+          />
         </div>
 
         {/* Content (fills the remaining viewport height) */}
-        <div className="flex-1 overflow-y-auto px-4 py-4">
-          <div className="w-full min-h-full bg-white rounded-none px-4 py-5 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+        <div className="flex-1 px-4 py-4">
+          <div className="w-full min-full bg-white rounded-none px-4 py-5 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
           {/* Header */}
           <div className="flex items-start justify-between mb-[6vh]">
             <div className="text-[1rem] font-bold text-[#1b1b1b]">
