@@ -45,8 +45,12 @@ Analysis Guidelines:
 2. Record each cultural element with accurate timestamps.
 3. Adjust explanations based on user's level and interests.
 4. PRIMARY LANGUAGE: English. Include Korean terms with romanization and short explanations.
-5. trigger_keyword MUST be concise: 1–2 words, short Korean term with romanization (e.g., "이모/imo", "형/hyung"). Avoid long phrases or full sentences.
+5. trigger_keyword MUST be a single concise term: strictly 1–2 words, Korean with romanization as "한글/romanization" (e.g., "이모/imo", "형/hyung").
+   - Do NOT include multiple keywords joined by symbols or words (no '&', 'and', ',', ';', '|').
+   - Do NOT include explanations, parentheses, or extra descriptors. Max total length 40 chars.
+   - If romanization is unknown, provide just the Korean term (1–2 words) without any separators.
 6. related_interests MUST be chosen from the allowed slugs above and should reflect the user's interests when relevant.
+7. Avoid duplication across checkpoints: Each checkpoint must be UNIQUE. If the same cultural concept appears again, SKIP it unless you add a clearly different nuance. Prefer the earliest, most representative instance.
 
 Cultural Elements to Look For:
 - Honorific culture (언니/eonni, 오빠/oppa, 선배/sunbae, etc.)
@@ -148,7 +152,7 @@ Your response format:
     {{
       "timestamp_seconds": integer - time in seconds (e.g., 125),
       "timestamp_formatted": "string - formatted time (e.g., 02:05)",
-      "trigger_keyword": "string - Korean term with romanization",
+      "trigger_keyword": "string - single Korean term with romanization (한글/rom). No multiple terms, no '&' or commas; <=40 chars",
       "segment_stt": "string - actual dialogue at this point",
       "scene_description": "string - what's visible on screen",
       "context_title": "string - cultural context title",
@@ -168,11 +172,13 @@ Critical Requirements:
 - timestamp_seconds: integer (no decimals)
 - All text fields: non-empty strings
 - related_interests: choose only from allowed slugs; may be an empty array []
-- Find at least 3 cultural checkpoints
+- Find at least 3 UNIQUE cultural checkpoints (no duplicates of previously explained concepts)
 - Adjust explanation depth based on user's familiarity level (1-5)
 - Include romanization for all Korean terms
 - PRIMARY LANGUAGE IS ENGLISH with Korean terms explained
-- Keep trigger_keyword short (1–2 words); avoid long phrases"""
+- Keep trigger_keyword short (1–2 words); avoid long phrases
+- Do NOT join multiple keywords with '&', 'and', ',', ';', or '|'
+- Ensure trigger_keyword length <= 40 characters"""
 
     return prompt
 
@@ -260,5 +266,6 @@ Rules:
 - Keep trigger_keyword concise (1–2 words). Avoid quoting long transcript chunks.
 - Reflect user familiarity/level/interests when helpful.
 - Avoid redundancy and long paragraphs. Respect all length limits.
+- Do not repeat the same concept across different items; each item's recap/tps/quizzes must focus on the specific checkpoint without duplicating earlier explanations.
 - Return JSON only. No extra text before/after.
 """

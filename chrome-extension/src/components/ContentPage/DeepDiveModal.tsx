@@ -1,5 +1,6 @@
 /* eslint-disable tailwindcss/classnames-order, tailwindcss/no-unnecessary-arbitrary-value */
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import LogoWhite from 'assets/images/logo/logo_white.png';
 import floatingTaki from 'assets/images/character/floating_taki.png';
 import studyTaki from 'assets/images/character/study_taki.png';
@@ -36,7 +37,16 @@ function DeepDiveModal({ checkpoint, deepDiveItem, onClose }: DeepDiveModalProps
       if (e.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    // lock scroll on mount
+    const prevHtml = document.documentElement.style.overflow;
+    const prevBody = document.body.style.overflow;
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      document.documentElement.style.overflow = prevHtml;
+      document.body.style.overflow = prevBody;
+    };
   }, [onClose]);
 
   const {
@@ -50,6 +60,7 @@ function DeepDiveModal({ checkpoint, deepDiveItem, onClose }: DeepDiveModalProps
     openAnswer, setOpenAnswer,
     revealedHints, setRevealedHints,
     answeredCorrectly,
+    attemptResult,
     thinkChat,
     mascotShouldAnimate,
     actions,
@@ -62,7 +73,17 @@ function DeepDiveModal({ checkpoint, deepDiveItem, onClose }: DeepDiveModalProps
     return null as unknown as string | null;
   }, [stage]);
 
-  return (
+  // Center O/X feedback overlay
+  const [feedbackVisible, setFeedbackVisible] = React.useState(false);
+  React.useEffect(() => {
+    if (stage !== 'quiz') return;
+    if (attemptResult === 'none') return;
+    setFeedbackVisible(true);
+    const id = window.setTimeout(() => setFeedbackVisible(false), 900);
+    return () => window.clearTimeout(id);
+  }, [attemptResult, stage]);
+
+  return createPortal((
     <div className="fixed inset-0 z-50">
       {/* Backdrop */}
       <div className={`absolute inset-0 bg-[#1b1b1b]/70 modal-backdrop modal-backdrop--open`} onClick={onClose} />
@@ -154,6 +175,11 @@ function DeepDiveModal({ checkpoint, deepDiveItem, onClose }: DeepDiveModalProps
               <h3 className="text-[1rem] font-medium text-[#1b1b1b] mb-2">Quiz {currentQuizIndex + 1}</h3>
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-[#1b1b1b] text-[0.95rem] mr-3">{currentQuiz.question}</p>
+                {attemptResult !== 'none' && (
+                  <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white text-[0.95rem] ${attemptResult === 'correct' ? 'bg-green-500' : 'bg-red-500'}`}>
+                    {attemptResult === 'correct' ? 'O' : 'X'}
+                  </div>
+                )}
               </div>
               {currentQuiz.kind === 'multiple_choice' && Array.isArray(currentQuiz.options) && (
                 <div className="mb-3 flex flex-col gap-2">
@@ -218,9 +244,20 @@ function DeepDiveModal({ checkpoint, deepDiveItem, onClose }: DeepDiveModalProps
             />
           </div>
         )}
+
+        {/* O/X Feedback Overlay */}
+        {stage === 'quiz' && attemptResult !== 'none' && (
+          <div className={`pointer-events-none fixed inset-0 z-[70] flex items-center justify-center transition-all duration-300 ease-out transform ${feedbackVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
+            <div className={`flex items-center justify-center rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.25)] ${attemptResult === 'correct' ? 'bg-green-500' : 'bg-red-500'} w-[42vw] h-[42vw] max-w-[240px] max-h-[240px]`}> 
+              <div className="text-white font-bold select-none" style={{ fontSize: '18vw', lineHeight: 1 }}>
+                {attemptResult === 'correct' ? 'O' : 'X'}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
-  );
+  ), document.body);
 }
 
 export default DeepDiveModal;

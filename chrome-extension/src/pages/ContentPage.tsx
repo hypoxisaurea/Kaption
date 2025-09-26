@@ -21,6 +21,7 @@ function ContentPage() {
   const { sortedCheckpoints, visibleUntilIndex, isBootstrapping, isProgressiveMode } = useProgressiveCheckpoints({ analysisData, enabled: true });
 
   const getPageClass = () => {
+    // Use min-h-screen to allow page height to expand under modal; body scroll will be locked by modal
     const baseClass = 'w-full min-h-screen bg-[#1b1b1b] overflow-x-hidden hide-scrollbar';
 
     // 접힘 완료 후 나타나는 효과

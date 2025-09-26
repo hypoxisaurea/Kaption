@@ -73,6 +73,54 @@ class YouTubeCulturalAnalyzer:
         else:
             return f"{minutes:02d}:{secs:02d}"
 
+    def _sanitize_trigger_keyword(self, value: str) -> str:
+        """Normalize trigger_keyword to a single concise 'ko/rom' pair (no '&', max ~40 chars)."""
+        try:
+            if value is None:
+                return ""
+            s = str(value).replace("\n", " ").replace("\r", " ").strip().strip('\"\'')
+
+            # Prefer the first Korean/romanization pair if present
+            m = re.search(r'([가-힣][가-힣\s\-]{0,24})\s*/\s*([A-Za-z][A-Za-z\s\-]{0,24})', s)
+            if m:
+                ko = re.sub(r'\s{2,}', ' ', m.group(1).strip())
+                rom = re.sub(r'\s{2,}', ' ', m.group(2).strip())
+            else:
+                # Otherwise, take the first token before separators and drop any trailing '/...'
+                head = re.split(r'\s*(?:&|,|;|\band\b|\bor\b|\||·|•)\s*', s, maxsplit=1, flags=re.IGNORECASE)[0]
+                head = re.sub(r'\(.*?\)|\[.*?\]', '', head).strip()
+                head = head.split('/', 1)[0].strip()
+                ko = head
+                rom = ""
+
+            # Keep at most two words for readability
+            def _two_words(t: str) -> str:
+                parts = t.split()
+                return " ".join(parts[:2])
+            ko = _two_words(ko)
+            if rom:
+                rom = _two_words(rom)
+
+            # Remove disallowed chars (keep Korean letters, ASCII letters/digits, hyphen and space)
+            ko = re.sub(r'[^가-힣A-Za-z0-9\-\s]', '', ko).strip()
+            rom = re.sub(r'[^A-Za-z0-9\-\s]', '', rom).strip()
+
+            # Length caps
+            ko = ko[:24].strip()
+            rom = rom[:24].strip()
+
+            sanitized = f"{ko}/{rom}" if ko and rom else ko
+            # Final guards
+            sanitized = sanitized.split('&', 1)[0].strip()
+            if len(sanitized) > 40:
+                sanitized = sanitized[:40].rstrip()
+            return sanitized
+        except Exception:
+            try:
+                return str(value).split('&', 1)[0].split(',', 1)[0].split('/', 1)[0].strip()
+            except Exception:
+                return ""
+
     def _get_response_schema(self):
         """Get structured output schema for Gemini API"""
         return {
@@ -93,7 +141,7 @@ class YouTubeCulturalAnalyzer:
                         "properties": {
                             "timestamp_seconds": {"type": "integer"},
                             "timestamp_formatted": {"type": "string"},
-                            "trigger_keyword": {"type": "string"},
+                            "trigger_keyword": {"type": "string", "maxLength": 40, "pattern": "^[^&]{1,40}$"},
                             "segment_stt": {"type": "string"},
                             "scene_description": {"type": "string"},
                             "context_title": {"type": "string"},
@@ -236,7 +284,7 @@ class YouTubeCulturalAnalyzer:
                         checkpoint = CulturalCheckpoint(
                             timestamp_seconds=timestamp_seconds,
                             timestamp_formatted=timestamp_formatted,
-                            trigger_keyword=cp_data.get('trigger_keyword', ''),
+                            trigger_keyword=self._sanitize_trigger_keyword(cp_data.get('trigger_keyword', '')),
                             segment_stt=cp_data.get('segment_stt', ''),
                             scene_description=cp_data.get('scene_description', ''),
                             context_title=cp_data.get('context_title', ''),

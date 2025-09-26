@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { onTts, sendRealtimeEvent, speakRealtime } from "services/tts";
+import { onTts, sendRealtimeEvent, speakRealtime, prewarmRealtime } from "services/tts";
 
 export type DeepDiveStage = "recap" | "think" | "quiz" | "done";
 
@@ -31,6 +31,7 @@ export default function useDeepDiveStages({
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [openAnswer, setOpenAnswer] = useState<string>("");
   const [revealedHints, setRevealedHints] = useState<number>(0);
+  const [attemptResult, setAttemptResult] = useState<"none" | "correct" | "wrong">("none");
   const [ttsEnabled] = useState<boolean>(true);
   const [mascotShouldAnimate, setMascotShouldAnimate] = useState<boolean>(true);
   const lastSpeakRef = useRef<{ text: string; at: number } | null>(null);
@@ -41,7 +42,14 @@ export default function useDeepDiveStages({
     const last = lastSpeakRef.current;
     if (last && last.text === text && now - last.at < 1200) return;
     lastSpeakRef.current = { text, at: now };
-    speakRealtime(text);
+    (async () => {
+      const ok1 = await speakRealtime(text);
+      if (!ok1) {
+        await prewarmRealtime();
+        await new Promise((r) => setTimeout(r, 150));
+        await speakRealtime(text);
+      }
+    })().catch(() => {});
   };
 
   useEffect(() => {
@@ -129,6 +137,7 @@ export default function useDeepDiveStages({
     setSelectedIdx(null);
     setOpenAnswer("");
     setRevealedHints(0);
+    setAttemptResult("none");
     return () => {};
   }, [stage, currentQuiz]);
 
@@ -141,14 +150,12 @@ export default function useDeepDiveStages({
     if (stage !== "quiz") return;
     let off: (() => void) | null = null;
     off = onTts("tts.end", () => {
-      if (currentQuizIndex + 1 < (quizzes?.length || 0))
-        setCurrentQuizIndex((nextIdx) => nextIdx + 1);
-      else setStage("done");
+      // Do not auto-advance; user controls progression via Next/Done
     });
     return () => {
       if (off) off();
     };
-  }, [stage, currentQuizIndex, quizzes]);
+  }, [stage]);
 
   const actions = {
     goQuiz: () => setStage("quiz" as DeepDiveStage),
@@ -180,32 +187,43 @@ export default function useDeepDiveStages({
     ) => {
       // correctness 추론
       const correctIdx =
-        typeof currentQuiz.correct_index === "number"
-          ? currentQuiz.correct_index
-          : typeof currentQuiz.answer_index === "number"
-            ? currentQuiz.answer_index
-            : (Array.isArray(currentQuiz.options) &&
-                  currentQuiz.options.findIndex((o: any) => o?.is_correct)) >= 0
-              ? currentQuiz.options.findIndex((o: any) => o?.is_correct)
-              : typeof currentQuiz.answer_text === "string"
-                ? currentQuiz.options.findIndex(
-                    (o: any) =>
-                      String(o?.text || "")
-                        .trim()
-                        .toLowerCase() ===
-                      String(currentQuiz.answer_text).trim().toLowerCase()
-                  )
-                : -1;
+        // 공식 스키마: correct_option_index
+        typeof currentQuiz.correct_option_index === "number"
+          ? currentQuiz.correct_option_index
+          // 과거/기타 필드들 호환
+          : typeof currentQuiz.correct_index === "number"
+            ? currentQuiz.correct_index
+            : typeof currentQuiz.answer_index === "number"
+              ? currentQuiz.answer_index
+              : (Array.isArray(currentQuiz.options) &&
+                    currentQuiz.options.findIndex((o: any) => o?.is_correct)) >= 0
+                ? currentQuiz.options.findIndex((o: any) => o?.is_correct)
+                : typeof currentQuiz.correct_answer_text === "string"
+                  ? currentQuiz.options.findIndex(
+                      (o: any) =>
+                        String(o?.text || "").trim().toLowerCase() ===
+                        String(currentQuiz.correct_answer_text).trim().toLowerCase()
+                    )
+                  : typeof currentQuiz.answer_text === "string"
+                    ? currentQuiz.options.findIndex(
+                        (o: any) =>
+                          String(o?.text || "").trim().toLowerCase() ===
+                          String(currentQuiz.answer_text).trim().toLowerCase()
+                      )
+                    : -1;
       const isCorrect = correctIdx >= 0 ? i === correctIdx : false;
       if (isCorrect) {
         setAnsweredCorrectly(true);
-        speak("That's correct! Let's move on when you're ready.");
+        setAttemptResult("correct");
       } else {
-        const hint =
-          Array.isArray(currentQuiz.hints) && currentQuiz.hints.length > 0
-            ? currentQuiz.hints[0]
-            : "Think again. Focus on tense and the key clue.";
-        speakHint(hint);
+        setAttemptResult("wrong");
+        const maxHints = Array.isArray(currentQuiz.hints)
+          ? Math.min(2, currentQuiz.hints.length)
+          : 0;
+        setRevealedHints((prev) => {
+          const next = Math.max(1, prev + 1);
+          return Math.min(next, maxHints);
+        });
       }
       setSelectedIdx(i);
     },
@@ -218,22 +236,25 @@ export default function useDeepDiveStages({
         .trim()
         .toLowerCase();
       const answers: string[] = Array.isArray(currentQuiz.accepted_answers)
-        ? currentQuiz.accepted_answers.map((a: any) =>
-            String(a).trim().toLowerCase()
-          )
-        : currentQuiz.answer_text
-          ? [String(currentQuiz.answer_text).trim().toLowerCase()]
-          : [];
+        ? currentQuiz.accepted_answers.map((a: any) => String(a).trim().toLowerCase())
+        : currentQuiz.correct_answer_text
+          ? [String(currentQuiz.correct_answer_text).trim().toLowerCase()]
+          : currentQuiz.answer_text
+            ? [String(currentQuiz.answer_text).trim().toLowerCase()]
+            : [];
       const ok = answers.length > 0 ? answers.includes(normalized) : false;
       if (ok) {
         setAnsweredCorrectly(true);
-        speak("That's correct! Let's move on when you're ready.");
+        setAttemptResult("correct");
       } else {
-        const hint =
-          Array.isArray(currentQuiz.hints) && currentQuiz.hints.length > 0
-            ? currentQuiz.hints[0]
-            : "Consider the key term or tense for this question.";
-        speakHint(hint);
+        setAttemptResult("wrong");
+        const maxHints = Array.isArray(currentQuiz.hints)
+          ? Math.min(2, currentQuiz.hints.length)
+          : 0;
+        setRevealedHints((prev) => {
+          const next = Math.max(1, prev + 1);
+          return Math.min(next, maxHints);
+        });
       }
     },
     revealHint: (i: number) =>
@@ -264,6 +285,7 @@ export default function useDeepDiveStages({
     answeredCorrectly,
     thinkChat,
     mascotShouldAnimate,
+    attemptResult,
     // actions
     actions,
   };
