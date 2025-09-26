@@ -1,6 +1,8 @@
 /* eslint-disable tailwindcss/classnames-order, tailwindcss/no-unnecessary-arbitrary-value */
 import React, { useEffect } from 'react';
-import { speakText } from 'services/tts';
+import { speakNative, speakRealtime } from 'services/tts';
+import { onTts } from 'services/tts';
+import { sendRealtimeEvent } from 'services/tts';
 import LogoWhite from 'assets/images/logo/logo_white.png';
 import floatingTaki from 'assets/images/character/floating_taki.png';
 import studyTaki from 'assets/images/character/study_taki.png';
@@ -40,7 +42,7 @@ function DeepDiveModal({ checkpoint, deepDiveItem, onClose }: DeepDiveModalProps
   }, [onClose]);
 
   // 단계 상태: recap -> think -> quiz -> share -> done
-  const [stage, setStage] = React.useState<'recap'|'think'|'quiz'|'share'|'done'>('recap');
+  const [stage, setStage] = React.useState<'recap'|'think'|'quiz'|'done'>('recap');
   const recap = deepDiveItem?.recap;
   const tps = deepDiveItem?.tps;
   const quizzes = deepDiveItem?.quizzes as any[] | undefined;
@@ -49,6 +51,8 @@ function DeepDiveModal({ checkpoint, deepDiveItem, onClose }: DeepDiveModalProps
   const recapSummary: string = React.useMemo(() => String(recap?.detailed?.summary_main || ''), [recap]);
 
   const [thinkNotes, setThinkNotes] = React.useState('');
+  const [answeredCorrectly, setAnsweredCorrectly] = React.useState<boolean>(false);
+  const [thinkChat, setThinkChat] = React.useState('');
   // Think timer (auto-advance)
   const defaultThinkSeconds = Math.max(10, Math.min(120, tps?.think?.timebox_seconds ?? 30));
   const [thinkTimeLeft, setThinkTimeLeft] = React.useState<number>(defaultThinkSeconds);
@@ -66,11 +70,15 @@ function DeepDiveModal({ checkpoint, deepDiveItem, onClose }: DeepDiveModalProps
   const [mascotShouldAnimate, setMascotShouldAnimate] = React.useState<boolean>(true);
   const [autoAdvance] = React.useState<boolean>(false);
   const [recapTtsSpoken, setRecapTtsSpoken] = React.useState<boolean>(false);
+  const lastSpeakRef = React.useRef<{ text: string; at: number } | null>(null);
 
   const speak = (text?: string) => {
     if (!ttsEnabled || !text) return;
-    // 리얼타임 우선, 실패 시 네이티브 폴백
-    speakText(text, 'realtime');
+    const now = performance.now();
+    const last = lastSpeakRef.current;
+    if (last && last.text === text && now - last.at < 1200) return;
+    lastSpeakRef.current = { text, at: now };
+    speakRealtime(text);
   };
 
   // TTS 비활성 시 즉시 중단 (현재 토글 UI는 제거됨)
@@ -98,90 +106,88 @@ function DeepDiveModal({ checkpoint, deepDiveItem, onClose }: DeepDiveModalProps
   // Think countdown & auto-advance (auto 모드에서만)
   useEffect(() => {
     if (stage !== 'think') return;
-    setThinkTimeLeft(defaultThinkSeconds);
-    setThinkRunning(autoAdvance);
-    let raf = 0;
-    const start = performance.now();
-    const tick = (ts: number) => {
-      if (!thinkRunning) return;
-      const elapsed = Math.floor((ts - start) / 1000);
-      const left = Math.max(0, defaultThinkSeconds - elapsed);
-      setThinkTimeLeft(left);
-      if (left > 0) raf = requestAnimationFrame(tick);
-      else if (autoAdvance) setStage('quiz');
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stage, defaultThinkSeconds, thinkRunning, autoAdvance]);
+    return () => {};
+  }, [stage]);
 
   // Reset quiz timer on quiz index change (auto 모드에서만 동작)
   useEffect(() => {
     if (stage !== 'quiz' || !currentQuiz) return;
     setQuizTimeLeft(defaultQuizSeconds);
-    setQuizRunning(autoAdvance);
+    setQuizRunning(false);
     setSelectedIdx(null);
     setOpenAnswer('');
-    // no-op
     setRevealedHints(0);
-    let raf = 0;
-    const start = performance.now();
-    const tick = (ts: number) => {
-      if (!quizRunning) return;
-      const elapsed = Math.floor((ts - start) / 1000);
-      const left = Math.max(0, defaultQuizSeconds - elapsed);
-      setQuizTimeLeft(left);
-      if (left > 0) raf = requestAnimationFrame(tick);
-      else {
-        if (autoAdvance) {
-          // Auto-advance after showing explanation briefly
-          setTimeout(() => {
-            const nextIdx = (currentQuizIndex + 1);
-            if (quizzes && nextIdx < quizzes.length) setCurrentQuizIndex(nextIdx);
-            else setStage('share');
-          }, 2000);
-        }
-      }
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    return () => {};
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stage, currentQuizIndex, autoAdvance]);
+  }, [stage, currentQuizIndex]);
 
   // Recap TTS once: read the same summary text
   useEffect(() => {
     if (stage !== 'recap') return;
-    if (recapTtsSpoken) return;
+    let moved = false;
+    const off = onTts('tts.end', () => {
+      if (!moved) {
+        moved = true;
+        setStage('think');
+      }
+    });
     const text = recapSummary.trim();
-    if (text) {
-      speak(text);
-      setRecapTtsSpoken(true);
-    }
+    if (text) speak(text);
+    return () => { if (off) off(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stage, recapSummary, recapTtsSpoken]);
+  }, [stage, recapSummary]);
 
   // No separate intro line to avoid mismatch with the card content
 
-  // Think stage TTS
+  // Think stage TTS: read what's rendered + conversational nudge
   useEffect(() => {
     if (stage !== 'think') return;
-    speak(tps?.think?.tts_line || tps?.think?.prompt);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const lines: string[] = [];
+    if (tps?.think?.prompt) lines.push(String(tps.think.prompt));
+    if (Array.isArray(tps?.think?.guiding_questions) && tps!.think!.guiding_questions.length > 0) {
+      const qs = tps!.think!.guiding_questions.slice(0, 2).map(String);
+      lines.push(...qs);
+    }
+    lines.push("When you're ready, press Start Quiz.");
+    lines.push("Before that, share one short thought about this topic—let's chat.");
+    const text = lines.join('\n');
+    speak(text);
+    // After reading, kick off an on-topic realtime conversation
+    const off = onTts('tts.end', () => {
+      const ctx: string[] = [];
+      ctx.push(`[CONTEXT]\nTitle: ${checkpoint.context_title}`);
+      if (tps?.think?.prompt) ctx.push(`Prompt: ${tps.think.prompt}`);
+      if (Array.isArray(tps?.think?.guiding_questions)) ctx.push(`Guiding: ${tps.think.guiding_questions.slice(0, 3).join(' | ')}`);
+      ctx.push(`[STYLE] English only. 1-2 sentences. Friendly, conversational. Ask exactly one short follow-up question.`);
+      ctx.push(`[POLICY] Stay strictly on this topic. Do NOT reveal any quiz answers or solutions.`);
+      const systemMsg = ctx.join('\n');
+      sendRealtimeEvent({
+        type: 'conversation.item.create',
+        item: { type: 'message', role: 'system', content: [{ type: 'input_text', text: systemMsg }] }
+      });
+      sendRealtimeEvent({ type: 'response.create', response: { instructions: 'Start a brief on-topic convo. Ask one short follow-up. Keep it friendly.' } });
+      off();
+    });
+    return () => { off && off(); };
   }, [stage]);
 
   // Quiz stage TTS
   useEffect(() => {
     if (stage !== 'quiz') return;
-    if (currentQuiz?.question) speak(currentQuiz.question);
+    // No TTS in quiz; only reset correctness state
+    setAnsweredCorrectly(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stage, currentQuizIndex]);
-
-  // Share stage TTS
+  // No auto-advance after explanation; user controls next
   useEffect(() => {
-    if (stage !== 'share') return;
-    if (tps?.share?.prompt) speak(tps.share.prompt);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stage]);
+    if (stage !== 'quiz') return;
+    let off: (() => void) | null = null;
+    off = onTts('tts.end', () => {
+      if (currentQuizIndex + 1 < (quizzes?.length || 0)) setCurrentQuizIndex(nextIdx => nextIdx + 1);
+      else setStage('done');
+    });
+    return () => { if (off) off(); };
+  }, [stage, currentQuizIndex, quizzes]);
 
   return (
     <div className="fixed inset-0 z-50">
@@ -227,9 +233,7 @@ function DeepDiveModal({ checkpoint, deepDiveItem, onClose }: DeepDiveModalProps
                   </div>
                 </div>
               </div>
-              <div className="flex gap-2 mt-4">
-                <button className="px-4 py-2 rounded-[3vw] bg-black text-white" onClick={() => setStage('think')}>Continue</button>
-              </div>
+              <div className="mt-4" />
             </div>
           )}
 
@@ -250,13 +254,41 @@ function DeepDiveModal({ checkpoint, deepDiveItem, onClose }: DeepDiveModalProps
                   ))}
                 </div>
               ) : null}
-              <div className="flex items-center gap-3 mb-3">
-                <div className="text-sm text-gray-700">Time Left: {thinkTimeLeft}s</div>
-                <button className="px-3 py-1 rounded-[3vw] border border-gray-300 text-sm hover:bg-black/5" onClick={() => setThinkRunning(r => !r)}>
-                  {thinkRunning ? 'Pause' : 'Resume'}
+              <div className="mb-3 flex items-center gap-2">
+                <input
+                  value={thinkChat}
+                  onChange={(e) => setThinkChat(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      const msg = thinkChat.trim();
+                      if (!msg) return;
+                      sendRealtimeEvent({
+                        type: 'conversation.item.create',
+                        item: { type: 'message', role: 'user', content: [{ type: 'input_text', text: msg }] }
+                      });
+                      sendRealtimeEvent({ type: 'response.create', response: { instructions: 'Respond briefly and conversationally to the user\'s thought.' } });
+                      setThinkChat('');
+                    }
+                  }}
+                  placeholder="Share a short thought..."
+                  className="flex-1 rounded-[3vw] border border-gray-200 p-2 text-[0.9rem]"
+                />
+                <button
+                  className="rounded-[3vw] bg-black px-3 py-1 text-sm text-white"
+                  onClick={() => {
+                    const msg = thinkChat.trim();
+                    if (!msg) return;
+                    sendRealtimeEvent({
+                      type: 'conversation.item.create',
+                      item: { type: 'message', role: 'user', content: [{ type: 'input_text', text: msg }] }
+                    });
+                    sendRealtimeEvent({ type: 'response.create', response: { instructions: 'Respond briefly and conversationally to the user\'s thought.' } });
+                    setThinkChat('');
+                  }}
+                >
+                  Send
                 </button>
               </div>
-              <textarea value={thinkNotes} onChange={(e) => setThinkNotes(e.target.value)} placeholder="Write 1–2 sentences..." className="w-full border border-gray-200 rounded-[2.5vw] p-2 text-[0.9rem] mb-3" />
               <div className="flex gap-2">
                 <button className="px-4 py-2 rounded-[3vw] bg-black text-white" onClick={() => setStage('quiz')}>Start Quiz</button>
               </div>
@@ -267,17 +299,36 @@ function DeepDiveModal({ checkpoint, deepDiveItem, onClose }: DeepDiveModalProps
           {stage === 'quiz' && currentQuiz && (
             <div>
               <h3 className="text-[1rem] font-medium text-[#1b1b1b] mb-2">Quiz {currentQuizIndex + 1}</h3>
-              <div className="flex items-center justify-between mb-2">
+              <div className="mb-2 flex items-center justify-between">
                 <p className="text-[#1b1b1b] text-[0.95rem] mr-3">{currentQuiz.question}</p>
-                <span className="text-xs text-gray-600">Time Left: {quizTimeLeft}s</span>
               </div>
               {currentQuiz.kind === 'multiple_choice' && Array.isArray(currentQuiz.options) && (
-                <div className="flex flex-col gap-2 mb-3">
+                <div className="mb-3 flex flex-col gap-2">
                   {currentQuiz.options.map((opt: any, i: number) => (
                     <button
                       key={i}
                       className={`text-left px-3 py-2 rounded-[3vw] border ${selectedIdx === i ? 'border-black bg-gray-100' : 'border-gray-200 hover:bg-gray-100'}`}
-                      onClick={() => { setSelectedIdx(i); if (currentQuiz.explanation) speak(currentQuiz.explanation); }}
+                      onClick={() => {
+                        setSelectedIdx(i);
+                        // rule-based correctness
+                        const correctIdx = (typeof currentQuiz.correct_index === 'number') ? currentQuiz.correct_index
+                          : (typeof currentQuiz.answer_index === 'number') ? currentQuiz.answer_index
+                          : (Array.isArray(currentQuiz.options) && currentQuiz.options.findIndex((o: any) => o?.is_correct)) >= 0
+                            ? currentQuiz.options.findIndex((o: any) => o?.is_correct)
+                            : (typeof currentQuiz.answer_text === 'string')
+                              ? currentQuiz.options.findIndex((o: any) => String(o?.text || '').trim().toLowerCase() === String(currentQuiz.answer_text).trim().toLowerCase())
+                              : -1;
+                        const isCorrect = correctIdx >= 0 ? i === correctIdx : false;
+                        if (isCorrect) {
+                          setAnsweredCorrectly(true);
+                          speak("That's correct! Let's move on when you're ready.");
+                        } else {
+                          const hint = Array.isArray(currentQuiz.hints) && currentQuiz.hints.length > 0
+                            ? currentQuiz.hints[0]
+                            : 'Think again. Focus on tense and the key clue.';
+                          speak(hint);
+                        }
+                      }}
                     >
                       {opt.text}
                     </button>
@@ -288,7 +339,21 @@ function DeepDiveModal({ checkpoint, deepDiveItem, onClose }: DeepDiveModalProps
                 <div className="mb-3">
                   <input value={openAnswer} onChange={(e) => setOpenAnswer(e.target.value)} className="w-full border border-gray-200 rounded-[3vw] p-2 text-[0.9rem]" placeholder="Write a one-sentence answer" />
                   <div className="mt-2">
-                    <button className="px-3 py-1 rounded-[3vw] bg-black text-white text-sm" onClick={() => { if (currentQuiz.explanation) speak(currentQuiz.explanation); }}>Submit</button>
+                    <button className="px-3 py-1 rounded-[3vw] bg-black text-white text-sm" onClick={() => {
+                      const input = String(openAnswer || '').trim().toLowerCase();
+                      const answers: string[] = Array.isArray(currentQuiz.accepted_answers) ? currentQuiz.accepted_answers.map((a: any) => String(a).trim().toLowerCase())
+                        : currentQuiz.answer_text ? [String(currentQuiz.answer_text).trim().toLowerCase()] : [];
+                      const ok = answers.length > 0 ? answers.includes(input) : false;
+                      if (ok) {
+                        setAnsweredCorrectly(true);
+                        speak("That's correct! Let's move on when you're ready.");
+                      } else {
+                        const hint = Array.isArray(currentQuiz.hints) && currentQuiz.hints.length > 0
+                          ? currentQuiz.hints[0]
+                          : 'Consider the key term or tense for this question.';
+                        speak(hint);
+                      }
+                    }}>Submit</button>
                   </div>
                 </div>
               )}
@@ -306,51 +371,21 @@ function DeepDiveModal({ checkpoint, deepDiveItem, onClose }: DeepDiveModalProps
                   {currentQuiz.hints?.slice(0, revealedHints).map((h: string, i: number) => (<div key={i}>• {h}</div>))}
                 </div>
               )}
-              {currentQuiz.explanation && (
-                <div className="text-[0.9rem] text-[#1b1b1b] bg-[#f8f8f8] rounded p-3 mb-3">{currentQuiz.explanation}</div>
+              {currentQuizIndex + 1 < (quizzes?.length || 0) && (
+                <div className="flex gap-2">
+                  <button disabled={!answeredCorrectly} className={`px-4 py-2 rounded-[3vw] ${answeredCorrectly ? 'bg-black text-white' : 'bg-gray-200 text-gray-500 cursor-not-allowed'}`} onClick={() => setCurrentQuizIndex((idx) => idx + 1)}>Next Quiz</button>
+                </div>
               )}
-              <div className="flex gap-2">
-                {currentQuizIndex + 1 < (quizzes?.length || 0) ? (
-                  <button className="px-4 py-2 rounded-[3vw] bg-black text-white" onClick={() => setCurrentQuizIndex((idx) => idx + 1)}>Next Quiz</button>
-                ) : (
-                  <button className="px-4 py-2 rounded-[3vw] bg-black text-white" onClick={() => setStage('share')}>Summarize</button>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Stage: Share */}
-          {stage === 'share' && (
-            <div>
-              <h3 className="text-[1rem] font-medium text-[#1b1b1b] mb-2">Share</h3>
-              <p className="text-[#1b1b1b] text-[0.9rem] font-light leading-relaxed mb-3">{tps?.share?.prompt}</p>
-              <div className="grid grid-cols-1 gap-2 mb-3">
-                {(tps?.share?.report_template || ["claim","evidence","example","korean_term"]).map((key: string) => (
-                  <div key={key} className="flex items-center gap-2">
-                    <label className="w-28 text-xs uppercase text-gray-500">{key}</label>
-                    <input className="flex-1 border border-gray-200 rounded-[3vw] p-2 text-[0.9rem]" />
-                  </div>
-                ))}
-              </div>
-              {tps?.share?.self_check?.length ? (
-                <ul className="list-disc pl-6 text-[#1b1b1b] text-[0.9rem] space-y-1 mb-3">
-                  {tps.share.self_check.map((c: string, i: number) => (<li key={i}>{c}</li>))}
-                </ul>
-              ) : null}
-              <div className="flex gap-2">
-                <button className="px-4 py-2 rounded-[3vw] border border-gray-300 hover:bg-black/5" onClick={() => {
-                  const inputs = Array.from(document.querySelectorAll<HTMLInputElement>('input'));
-                  const data: Record<string,string> = {};
-                  (tps?.share?.report_template || ["claim","evidence","example","korean_term"]).forEach((k: string, i: number) => { data[k] = inputs[i]?.value || ''; });
-                  navigator.clipboard?.writeText(JSON.stringify(data));
-                }}>Copy</button>
-                <button className="px-4 py-2 rounded-[3vw] bg-[#2EC4B6] text-white" onClick={() => setStage('done')}>Done</button>
-              </div>
+              {currentQuizIndex + 1 >= (quizzes?.length || 0) && (
+                <div className="flex gap-2">
+                  <button className="px-4 py-2 rounded-[3vw] bg-black text-white" onClick={onClose}>Done</button>
+                </div>
+              )}
             </div>
           )}
 
           {stage === 'done' && (
-            <div className="text-[#1b1b1b]">Nice work! You can close via the back button.</div>
+            <div className="text-[#1b1b1b]">Great job! Learning complete. Use Close (top-right) to return.</div>
           )}
           </div>
         </div>
@@ -360,7 +395,7 @@ function DeepDiveModal({ checkpoint, deepDiveItem, onClose }: DeepDiveModalProps
             <img
               src={mascotSrc}
               alt="Tutor mascot"
-              className={mascotShouldAnimate ? 'w-[22vw] animate-bounce' : 'w-[22vw]'}
+              className={mascotShouldAnimate ? 'w-[40vw] animate-bounce' : 'w-[40vw]'}
             />
           </div>
         )}

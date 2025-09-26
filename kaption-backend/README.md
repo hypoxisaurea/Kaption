@@ -11,6 +11,7 @@ Kaption은 YouTube 영상에서 한국 문화 요소를 자동으로 감지하�
 ### 1. Prerequisites
 - Python 3.12+
 - Google Gemini API Key
+- OpenAI API Key (Realtime)
 
 ### 2. Setup Environment
 
@@ -28,6 +29,8 @@ pip install -r requirements.txt
 # Configure environment variables
 cp .env.example .env
 # Edit .env and add your GOOGLE_API_KEY
+# Also add your OpenAI key
+# OPENAI_API_KEY=sk-...
 ```
 
 ### 3. Run the Server

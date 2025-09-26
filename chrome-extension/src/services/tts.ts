@@ -9,6 +9,41 @@ let ready = false;
 let dcOpenPromise: Promise<void> | null = null;
 let audioUnlocked = false;
 let sessionVoice = 'sage';
+let sessionTools: null | { tools?: any[]; tool_choice?: string; turn_detection?: any } = null;
+type TtsEventName = 'tts.start' | 'tts.delta' | 'tts.end';
+type TtsEventHandler = (payload?: any) => void;
+
+const ttsListeners: Record<TtsEventName, Set<TtsEventHandler>> = {
+  'tts.start': new Set<TtsEventHandler>(),
+  'tts.delta': new Set<TtsEventHandler>(),
+  'tts.end': new Set<TtsEventHandler>(),
+};
+
+function emitTts(event: TtsEventName, payload?: any): void {
+  const ls = ttsListeners[event];
+  if (!ls) return;
+  ls.forEach((fn) => {
+    try { fn(payload); } catch {}
+  });
+}
+
+export function onTts(event: TtsEventName, handler: TtsEventHandler): () => void {
+  ttsListeners[event].add(handler);
+  return () => ttsListeners[event].delete(handler);
+}
+
+type ToolEventHandler = (payload: { name: string; arguments: any; call_id?: string }) => void;
+const toolListeners = new Set<ToolEventHandler>();
+export function onToolCall(handler: ToolEventHandler): () => void {
+  toolListeners.add(handler);
+  return () => toolListeners.delete(handler);
+}
+function emitToolCall(payload: { name: string; arguments: any; call_id?: string }) {
+  toolListeners.forEach((fn) => {
+    try { fn(payload); } catch {}
+  });
+}
+
 let sessionInstructions = [
   'You are Taki, a cheerful female bunny tutor mascot.',
   'Speak English only. Keep it friendly, energetic, and playful.',
@@ -37,7 +72,10 @@ async function getSessionToken(payload?: Partial<{ model: string; voice: string;
       body: JSON.stringify({
         model: payload?.model || 'gpt-4o-realtime-preview-2024-12-17',
         voice: payload?.voice || sessionVoice,
-        instructions: payload?.instructions || sessionInstructions
+        instructions: payload?.instructions || sessionInstructions,
+        ...(sessionTools?.tools ? { tools: sessionTools.tools } : {}),
+        ...(sessionTools?.tool_choice ? { tool_choice: sessionTools.tool_choice } : {}),
+        ...(sessionTools?.turn_detection ? { turn_detection: sessionTools.turn_detection } : {}),
       }),
     });
     if (!resp.ok) return null;
@@ -86,6 +124,28 @@ async function ensureRealtime(): Promise<boolean> {
     dcOpenPromise = new Promise<void>((resolve) => {
       dc!.addEventListener('open', () => { ready = true; resolve(); });
     });
+    dc.addEventListener('message', (e: MessageEvent) => {
+      try {
+        const event = JSON.parse(e.data);
+        if (event?.type === 'response.audio_transcript.delta' && event?.transcript) {
+          emitTts('tts.delta', { transcript: event.transcript });
+        }
+        if (event?.type === 'output_audio_buffer.stopped') {
+          emitTts('tts.end');
+        }
+        if (event?.type === 'response.done' && event?.response?.output) {
+          const outputs = event.response.output as any[];
+          outputs.forEach((out) => {
+            if (out?.type === 'function_call') {
+              const name = out.name;
+              let args: any = {};
+              try { args = typeof out.arguments === 'string' ? JSON.parse(out.arguments) : (out.arguments || {}); } catch {}
+              emitToolCall({ name, arguments: args, call_id: out.call_id });
+            }
+          });
+        }
+      } catch {}
+    });
 
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
@@ -115,6 +175,7 @@ export async function speakRealtime(text: string): Promise<boolean> {
       ]);
     }
     if (dc.readyState !== 'open') return false;
+    emitTts('tts.start');
     dc.send(JSON.stringify({
       type: 'conversation.item.create',
       item: { type: 'message', role: 'user', content: [{ type: 'input_text', text }] }
@@ -145,6 +206,8 @@ export function speakNative(text: string): boolean {
       u.pitch = 1.15; // slightly higher pitch
       u.rate = 0.95;  // comfortable pace
     } catch {}
+    u.onstart = () => emitTts('tts.start');
+    u.onend = () => emitTts('tts.end');
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(u);
     return true;
@@ -177,6 +240,30 @@ export function setTtsStyle(style: Partial<{ voice: string; instructions: string
   if (style.instructions) sessionInstructions = style.instructions;
   // Recreate session next time with new style
   try { teardownRealtime(); } catch {}
+}
+
+export function setRealtimeTools(config: { tools?: any[]; tool_choice?: string; turn_detection?: any }) {
+  sessionTools = config || null;
+  try { teardownRealtime(); } catch {}
+}
+
+export function sendRealtimeEvent(message: any): boolean {
+  try {
+    if (!dc || dc.readyState !== 'open') return false;
+    dc.send(JSON.stringify(message));
+    return true;
+  } catch { return false; }
+}
+
+export function sendToolOutput(callId: string, output: string): boolean {
+  if (!callId) return false;
+  const ok = sendRealtimeEvent({
+    type: 'conversation.item.create',
+    item: { type: 'function_call_output', call_id: callId, output },
+  });
+  // Optionally request a response afterwards
+  sendRealtimeEvent({ type: 'response.create', response: { instructions: 'Acknowledge the user’s action briefly.' } });
+  return ok;
 }
 
 

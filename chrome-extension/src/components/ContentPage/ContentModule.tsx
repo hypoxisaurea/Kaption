@@ -51,7 +51,7 @@ function ContentModule({ checkpoint, onClick, isLoading = false }: ContentModule
             disabled={isLoading}
         >
             <div id={`checkpoint-${checkpoint.timestamp_seconds}-${checkpoint.trigger_keyword}`} className={getCardClass()}>
-            <div className="flex items-start justify-between mb-[6vh]">
+            <div className="mb-[6vh] flex items-start justify-between">
                 <div className="text-[1rem] font-bold text-[#1b1b1b]">
                     {checkpoint.timestamp_formatted}
                 </div>
@@ -70,7 +70,7 @@ function ContentModule({ checkpoint, onClick, isLoading = false }: ContentModule
             
             <div className="mb-[4vh]">
                 <h3 className="text-[0.95rem] font-medium text-[#1b1b1b]">Tip</h3>
-                <p className="text-[#1b1b1b] text-[0.9rem] font-light leading-relaxed">{checkpoint.explanation.tip}</p>
+                <p className="text-[0.9rem] font-light leading-relaxed text-[#1b1b1b]">{checkpoint.explanation.tip}</p>
             </div>
             
             {checkpoint.related_interests && checkpoint.related_interests.length > 0 && (
@@ -90,7 +90,7 @@ function ContentModule({ checkpoint, onClick, isLoading = false }: ContentModule
             {isLoading && (
                 <div className="absolute inset-0 flex items-center justify-center rounded-[3.5vw] bg-white/70 backdrop-blur-[1px]">
                     <div className="flex flex-col items-center gap-2">
-                        <div className="size-8 rounded-full border-2 border-gray-300 border-t-[#1b1b1b] animate-spin"></div>
+                        <div className="size-8 rounded-full border-2 border-gray-300 border-t-black animate-spin"></div>
                         <div className="text-[0.85rem] text-[#1b1b1b]">Preparing your study pack…</div>
                     </div>
                 </div>
