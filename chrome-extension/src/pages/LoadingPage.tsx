@@ -4,7 +4,7 @@ interface LoadingPageProps {
   label?: string;
 }
 
-function LoadingPage({ label = 'Analyzing...' }: LoadingPageProps) {
+function LoadingPage({ label = 'analyzing...' }: LoadingPageProps) {
   return (
     <div className='w-full h-screen flex flex-col items-center justify-center'>
       <DotLoader color="#FF8C7A" className='mb-10' size={40}/>
