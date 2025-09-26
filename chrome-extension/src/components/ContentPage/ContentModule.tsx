@@ -35,7 +35,7 @@ function ContentModule({ checkpoint, onClick, isLoading = false }: ContentModule
     };
 
     const getCardClass = () => {
-        const baseClass = "relative bg-white font-spoqa rounded-[3.5vw] px-[6vw] py-[7vw] mb-10";
+        const baseClass = "relative bg-white font-spoqa rounded-[3.5vw] px-[5vw] py-[4vh] mb-10";
         
         switch (expandState) {
             case 'fullscreen':
@@ -44,6 +44,10 @@ function ContentModule({ checkpoint, onClick, isLoading = false }: ContentModule
                 return `${baseClass} card-expand-transition card-expand-start`;
         }
     };
+
+    const formattedKeyword = checkpoint.trigger_keyword.includes('/')
+    ? checkpoint.trigger_keyword.replace('/', '\n')
+    : checkpoint.trigger_keyword;
 
     return (
         <HoverOverlay 
@@ -55,22 +59,22 @@ function ContentModule({ checkpoint, onClick, isLoading = false }: ContentModule
                 <div className="text-[1rem] font-bold text-[#1b1b1b]">
                     {checkpoint.timestamp_formatted}
                 </div>
-                <div className="max-w-[30vw] rounded-full border-2 bg-secondary/45 px-[3vw] py-[0.6vh] text-[0.8rem]">
-                    {checkpoint.trigger_keyword}
+                <div className="max-w-[30vw] item-center rounded-[4vw] bg-secondary/45 px-[4vw] py-[0.75vh] text-[0.75rem] text-end" style={{ whiteSpace: 'pre-line' }}>
+                        {formattedKeyword}
                 </div>
             </div>
             
             <div className="mb-[3vh]">
-                <p className="text-[1.2rem] font-bold text-[#1b1b1b]">{checkpoint.context_title}</p>
+                <p className="text-[1.05rem] font-bold text-[#1b1b1b]">{checkpoint.context_title}</p>
             </div>
 
             <div className="mb-[6vh]">
-                <p className="text-[0.9rem] font-light leading-relaxed text-[#1b1b1b]">{checkpoint.explanation.main}</p>
+                <p className="text-[0.85rem] font-light leading-relaxed text-[#1b1b1b]">{checkpoint.explanation.main}</p>
             </div>
             
             <div className="mb-[4vh]">
-                <h3 className="text-[0.95rem] font-medium text-[#1b1b1b]">Tip</h3>
-                <p className="text-[0.9rem] font-light leading-relaxed text-[#1b1b1b]">{checkpoint.explanation.tip}</p>
+                <h3 className="text-[0.95rem] font-normal text-[#1b1b1b]">Tip!</h3>
+                <p className="text-[0.85rem] font-light leading-relaxed text-[#1b1b1b]">{checkpoint.explanation.tip}</p>
             </div>
             
             {checkpoint.related_interests && checkpoint.related_interests.length > 0 && (

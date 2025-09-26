@@ -27,6 +27,7 @@ function getDevDummyVideoInfo(): VideoInfoData {
         height: 720,
     };
 }
+
 function VideoInfo() {
     const [videoInfo, setVideoInfo] = useState<null | VideoInfoData>(null);
     const [loading, setLoading] = useState<boolean>(true);
@@ -45,7 +46,7 @@ function VideoInfo() {
             const next = data.currentVideoInfo as unknown;
             setVideoInfo(isVideoInfo(next) ? next : null);
         } catch (e) {
-            setError('영상 정보를 불러오는 중 오류가 발생했습니다.');
+            setError('Error occurred while loading video information.');
         } finally {
             setLoading(false);
         }
@@ -78,13 +79,13 @@ function VideoInfo() {
 
     return (
         <div className='flex flex-col items-center w-full'>
-            <div className='w-full py-4'>
+            <div className='w-full'>
                 {loading && (
                     <p className='text-sm text-gray-500'>Loading...</p>
                 )}
                 {!loading && !error && !videoInfo && (
-                    <div className='text-sm text-gray-600'>
-                        영상 정보가 없습니다. 확장프로그램 환경 외 실행 시 숨김 처리됩니다.
+                    <div className='text-center justify-center items-center text-[0.7rem] text-[#cccccc]'>
+                        There is no video information. <br/> It is hidden when executed outside the extension environment.
                     </div>
                 )}
                 {!loading && !error && videoInfo && (
@@ -98,9 +99,8 @@ function VideoInfo() {
                                 />
                             </div>
                         )}
-                        <div className='min-w-0 flex-1 space-y-2 text-left bg-white rounded-[2vw] px-[6vw] py-[7vw]'>
-                            <div className='text-[4vw] text-[#1b1b1b] font-bold break-words whitespace-normal max-w-full'>{videoInfo.metaTitle}</div>
-                            <div className='text-1 text-[#cccccc] break-all whitespace-normal max-w-full'>{videoInfo.url}</div>
+                        <div className='min-w-0 flex-1 space-y-2 text-left bg-white rounded-[2vw] px-[5vw] py-[2vh]'>
+                            <div className='text-[4vw] text-[#1b1b1b] font-bold break-words whitespace-normal max-w-full'>{videoInfo.title}</div>
                         </div>
                     </div>
                 )}
