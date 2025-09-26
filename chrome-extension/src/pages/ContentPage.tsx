@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { VideoInfo } from 'components';
 import ContentModule from 'components/ContentPage/ContentModule';
@@ -25,6 +25,8 @@ function ContentPage() {
   const [loadingCardId, setLoadingCardId] = useState<string | null>(null);
   const [visibleUntilIndex, setVisibleUntilIndex] = useState<number>(-1);
   const [isProgressiveMode, setIsProgressiveMode] = useState<boolean>(true);
+  const [isBootstrapping, setIsBootstrapping] = useState<boolean>(true);
+  const prevVisibleIndexRef = useRef<number>(-1);
 
   const handleCheckpointClick = async (checkpoint: any) => {
     // 사용자 제스처 시점에 오디오/세션 선-준비
@@ -178,10 +180,23 @@ function ContentPage() {
             hi = mid - 1;
           }
         }
-        if (last >= 0) setVisibleUntilIndex(last);
+        if (last >= 0) {
+          setVisibleUntilIndex(last);
+          // 부트스트랩은 짧은 시간만 스타거 적용
+          window.setTimeout(() => setIsBootstrapping(false), 800);
+        } else {
+          setIsBootstrapping(false);
+        }
       } catch {}
     })();
   }, [isProgressiveMode, sortedCheckpoints, visibleUntilIndex]);
+
+  // 부트스트랩을 거치지 않고 첫 카드가 추가되는 경우도 종료 처리
+  useEffect(() => {
+    if (isBootstrapping && visibleUntilIndex >= 0) {
+      window.setTimeout(() => setIsBootstrapping(false), 400);
+    }
+  }, [isBootstrapping, visibleUntilIndex]);
 
   // 재생 시간 폴링하여 progressive 렌더링
   useEffect(() => {
@@ -232,6 +247,26 @@ function ContentPage() {
     };
   }, [analysisData, sortedCheckpoints, isProgressiveMode]);
 
+  // 새 카드가 나타날 때 자동 스크롤(마지막 카드로)
+  useEffect(() => {
+    if (!isProgressiveMode) return;
+    const prev = prevVisibleIndexRef.current;
+    if (visibleUntilIndex <= prev) return;
+    prevVisibleIndexRef.current = visibleUntilIndex;
+
+    const last = sortedCheckpoints[visibleUntilIndex];
+    if (!last) return;
+    const elId = `checkpoint-${last.timestamp_seconds}-${last.trigger_keyword}`;
+    // 렌더 직후 DOM 반영을 기다렸다가 스크롤
+    const id = window.setTimeout(() => {
+      const el = document.getElementById(elId);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }, 50);
+    return () => window.clearTimeout(id);
+  }, [visibleUntilIndex, isProgressiveMode, sortedCheckpoints]);
+
   // 모달 상태: location.state?.modalCheckpoint
   const navState = (location.state as any) || undefined;
   const modalCheckpoint = navState?.modalCheckpoint as any | undefined;
@@ -261,12 +296,14 @@ function ContentPage() {
             <div className='mt-6'>
               {(isProgressiveMode ? sortedCheckpoints.slice(0, Math.min(sortedCheckpoints.length, visibleUntilIndex + 1)) : analysisData.checkpoints).map((checkpoint, index) => {
                 const cardId = `checkpoint-${checkpoint.timestamp_seconds}-${checkpoint.trigger_keyword}`;
+                const appearDelayMs = isBootstrapping ? 60 * Math.min(index, 8) : 0; // 초기 진입만 스타거
                 return (
                   <ContentModule
                     key={`${checkpoint.timestamp_seconds}-${index}`}
                     checkpoint={checkpoint}
                     onClick={handleCheckpointClick}
                     isLoading={loadingCardId === cardId}
+                    appearDelayMs={appearDelayMs}
                   />
                 );
               })}
