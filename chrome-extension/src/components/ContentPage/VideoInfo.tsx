@@ -99,9 +99,8 @@ function VideoInfo() {
                                 />
                             </div>
                         )}
-                        <div className='min-w-0 flex-1 space-y-2 text-left bg-white rounded-[2vw] px-[6vw] py-[7vw]'>
+                        <div className='min-w-0 flex-1 space-y-2 text-left bg-white rounded-[2vw] px-[5vw] py-[2vh]'>
                             <div className='text-[4vw] text-[#1b1b1b] font-bold break-words whitespace-normal max-w-full'>{videoInfo.title}</div>
-                            <div className='text-1 text-[#cccccc] break-all whitespace-normal max-w-full'>{videoInfo.url}</div>
                         </div>
                     </div>
                 )}
