@@ -8,7 +8,7 @@ function LoadingPage({ label = 'analyzing...' }: LoadingPageProps) {
   return (
     <div className='w-full h-screen flex flex-col items-center justify-center'>
       <DotLoader color="#FF8C7A" className='mb-10' size={40}/>
-      <span className='font-medium text-[1.3rem] text-[#1b1b1b]'>{label}</span>
+      <span className='font-medium text-[1.3rem] text-[#cccccc]'>{label}</span>
     </div>
   );
 }
