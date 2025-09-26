@@ -303,6 +303,42 @@ export async function fetchAndStoreCurrentVideoInfo(): Promise<VideoInfoData | n
   return info;
 }
 
+// ===== Lightweight playback polling =====
+export type PlaybackState = Pick<
+  VideoInfoData,
+  "currentTime" | "paused" | "playbackRate" | "duration"
+>;
+
+/**
+ * YouTube 플레이어의 현재 재생 상태를 가볍게 가져옵니다.
+ * - chrome.scripting.executeScript 로 활성 YouTube 탭의 <video> 상태만 읽어옴
+ */
+export async function getCurrentPlaybackState(): Promise<PlaybackState | null> {
+  const tab = await getActiveYouTubeTab();
+  if (!tab?.id) return null;
+  const url = tab.url || "";
+  if (!isHttpOrHttps(url)) return null;
+  if (!chrome?.scripting) return null;
+
+  const results = await chrome.scripting.executeScript({
+    target: { tabId: tab.id, allFrames: false },
+    func: () => {
+      const toFinite = (n: number) => (Number.isFinite(n) ? n : 0);
+      const video = document.querySelector("video") as HTMLVideoElement | null;
+      if (!video) return null;
+      return {
+        currentTime: toFinite(video.currentTime),
+        paused: !!video.paused,
+        playbackRate: toFinite(video.playbackRate) || 1,
+        duration: toFinite(video.duration),
+      };
+    },
+  });
+
+  const first = Array.isArray(results) ? results[0] : null;
+  return (first?.result as PlaybackState | null) ?? null;
+}
+
 // ===== User Profile Storage =====
 export async function saveUserProfileToStorage(
   profile: UserProfilePayload

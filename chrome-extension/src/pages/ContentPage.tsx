@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { VideoInfo } from 'components';
 import ContentModule from 'components/ContentPage/ContentModule';
@@ -11,6 +11,7 @@ import {
   requestDeepDiveBatch,
   saveDeepDiveResultToStorage,
   getAnalysisResultFromStorage, // 이 함수를 사용하도록 수정
+  getCurrentPlaybackState,
 } from 'services/chromeVideo';
 import sampleAnalysis from 'assets/data/sample_analysis_result.json';
 
@@ -22,6 +23,8 @@ function ContentPage() {
   const [loading, setLoading] = useState(true); // 초기 로딩 상태를 true로 설정
   const [error, setError] = useState<string | null>(null);
   const [loadingCardId, setLoadingCardId] = useState<string | null>(null);
+  const [visibleUntilIndex, setVisibleUntilIndex] = useState<number>(-1);
+  const [isProgressiveMode, setIsProgressiveMode] = useState<boolean>(true);
 
   const handleCheckpointClick = async (checkpoint: any) => {
     // 사용자 제스처 시점에 오디오/세션 선-준비
@@ -70,7 +73,7 @@ function ContentPage() {
   };
 
   const getPageClass = () => {
-    const baseClass = 'w-full bg-[#1b1b1b] overflow-x-hidden hide-scrollbar';
+    const baseClass = 'w-full min-h-screen bg-[#1b1b1b] overflow-x-hidden hide-scrollbar';
 
     // 접힘 완료 후 나타나는 효과
     if (expandState === 'idle') {
@@ -146,6 +149,89 @@ function ContentPage() {
     }
   }, []);
 
+  // 체크포인트 정렬 (안전장치)
+  const sortedCheckpoints = useMemo(() => {
+    const cps = analysisData?.checkpoints ?? [];
+    return [...cps].sort((a, b) => a.timestamp_seconds - b.timestamp_seconds);
+  }, [analysisData?.checkpoints]);
+
+  // 첫 tick 이전에 현재 재생시간으로 시작 오프셋 계산 (부트스트랩)
+  useEffect(() => {
+    if (!isProgressiveMode) return;
+    if (!sortedCheckpoints.length) return;
+    if (visibleUntilIndex >= 0) return; // 이미 설정됨
+
+    (async () => {
+      try {
+        const state = await getCurrentPlaybackState();
+        if (!state) return;
+        const t = state.currentTime;
+        let lo = 0;
+        let hi = sortedCheckpoints.length - 1;
+        let last = -1;
+        while (lo <= hi) {
+          const mid = (lo + hi) >> 1;
+          if (sortedCheckpoints[mid].timestamp_seconds <= t + 0.05) {
+            last = mid;
+            lo = mid + 1;
+          } else {
+            hi = mid - 1;
+          }
+        }
+        if (last >= 0) setVisibleUntilIndex(last);
+      } catch {}
+    })();
+  }, [isProgressiveMode, sortedCheckpoints, visibleUntilIndex]);
+
+  // 재생 시간 폴링하여 progressive 렌더링
+  useEffect(() => {
+    if (!analysisData || !sortedCheckpoints.length) return;
+
+    // 사용자가 전체 보기 원하면 중단
+    if (!isProgressiveMode) {
+      setVisibleUntilIndex(sortedCheckpoints.length - 1);
+      return;
+    }
+
+    let timerId: number | null = null;
+    let destroyed = false;
+
+    const tick = async () => {
+      if (destroyed) return;
+      try {
+        const state = await getCurrentPlaybackState();
+        if (state && Number.isFinite(state.currentTime)) {
+          const t = state.currentTime;
+          // 현재 시간 이하의 마지막 인덱스 계산 (이진 탐색)
+          let lo = 0;
+          let hi = sortedCheckpoints.length - 1;
+          let last = -1;
+          while (lo <= hi) {
+            const mid = (lo + hi) >> 1;
+            if (sortedCheckpoints[mid].timestamp_seconds <= t + 0.05) {
+              last = mid;
+              lo = mid + 1;
+            } else {
+              hi = mid - 1;
+            }
+          }
+          if (last >= 0) setVisibleUntilIndex((prev) => (last > prev ? last : prev));
+        }
+      } catch {}
+      finally {
+        if (!destroyed) {
+          timerId = window.setTimeout(tick, 500);
+        }
+      }
+    };
+
+    tick();
+    return () => {
+      destroyed = true;
+      if (timerId) window.clearTimeout(timerId);
+    };
+  }, [analysisData, sortedCheckpoints, isProgressiveMode]);
+
   // 모달 상태: location.state?.modalCheckpoint
   const navState = (location.state as any) || undefined;
   const modalCheckpoint = navState?.modalCheckpoint as any | undefined;
@@ -173,7 +259,7 @@ function ContentPage() {
 
           {analysisData && analysisData.checkpoints && (
             <div className='mt-6'>
-              {analysisData.checkpoints.map((checkpoint, index) => {
+              {(isProgressiveMode ? sortedCheckpoints.slice(0, Math.min(sortedCheckpoints.length, visibleUntilIndex + 1)) : analysisData.checkpoints).map((checkpoint, index) => {
                 const cardId = `checkpoint-${checkpoint.timestamp_seconds}-${checkpoint.trigger_keyword}`;
                 return (
                   <ContentModule
