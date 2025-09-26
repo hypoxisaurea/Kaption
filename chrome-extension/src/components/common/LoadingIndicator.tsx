@@ -14,5 +14,3 @@ function LoadingIndicator({ label = 'Analyzing...' }: LoadingIndicatorProps) {
 }
 
 export default LoadingIndicator;
-
-
