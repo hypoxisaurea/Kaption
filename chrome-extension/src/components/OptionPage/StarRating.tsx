@@ -11,14 +11,14 @@ interface StarRatingProps {
 
 const StyledRating = styled(Rating)({
   '& .MuiRating-iconFilled': {
-    color: '#ff6d75',
+    color: 'rgba(255, 140, 122)',
   },
   '& .MuiRating-iconHover': {
     color: '#ff3d47',
   },
 });
 
-const StarRating: React.FC<StarRatingProps> = ({ value, onChange }) => {
+function StarRating({ value, onChange }: StarRatingProps) {
   return (
     <div className="flex flex-row items-center justify-center space-x-1">
       <StyledRating

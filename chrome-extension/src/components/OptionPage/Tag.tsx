@@ -1,8 +1,9 @@
 // src/components/OptionPage/TagSelector.tsx
 
 import React, { useState } from 'react';
+import Chip from '@mui/material/Chip';
+import Box from '@mui/material/Box';
 
-// 태그 아이템의 타입을 정의합니다.
 interface TagItem {
     id: number;
     label: string;
@@ -10,43 +11,58 @@ interface TagItem {
 
 interface TagSelectorProps {
     items: TagItem[];
+    value?: number[];
+    onChange?: (ids: number[]) => void;
 }
 
-function TagSelector({ items }: TagSelectorProps) {
-    // 선택된 태그들의 id를 저장할 배열 상태를 만듭니다.
-    const [selectedTags, setSelectedTags] = useState<number[]>([]);
+function TagSelector({ items, value, onChange }: TagSelectorProps) {
+    const [uncontrolledSelected, setUncontrolledSelected] = useState<number[]>([]);
+    const isControlled = Array.isArray(value);
+    const selectedTags = isControlled ? (value as number[]) : uncontrolledSelected;
 
-    // 태그를 클릭했을 때 호출될 함수
     const handleTagClick = (tagId: number) => {
-        // 이미 선택된 태그인지 확인
-        if (selectedTags.includes(tagId)) {
-            // 선택된 태그이면 배열에서 제거 (선택 해제)
-            setSelectedTags(selectedTags.filter((id) => id !== tagId));
+        const next = selectedTags.includes(tagId)
+            ? selectedTags.filter((id) => id !== tagId)
+            : [...selectedTags, tagId];
+        if (onChange) {
+            onChange(next);
         } else {
-            // 선택되지 않았으면 배열에 추가 (선택)
-            setSelectedTags([...selectedTags, tagId]);
+            setUncontrolledSelected(next);
         }
     };
 
     return (
-        <div className="flex flex-wrap gap-2">
-            {items.map((item) => (
-                <button
-                    key={item.id}
-                    className={`
-                        rounded-full border border-gray-300 px-4 py-2
-                        text-sm font-medium transition-colors duration-200
-                        ${selectedTags.includes(item.id) 
-                            ? 'bg-black text-white' 
-                            : 'bg-white text-gray-700 hover:bg-gray-100'
-                        }
-                    `}
-                    onClick={() => handleTagClick(item.id)}
-                >
-                    {item.label}
-                </button>
-            ))}
-        </div>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+            {items.map((item) => {
+                const isSelected = selectedTags.includes(item.id);
+                return (
+                    <Chip
+                        key={item.id}
+                        label={item.label}
+                        clickable
+                        variant={isSelected ? 'filled' : 'outlined'}
+                        onClick={() => handleTagClick(item.id)}
+                        sx={{ borderRadius: '9999px',
+                            ...(isSelected
+                                ? {
+                                    // Chip 기본 변형 스타일보다 우선 적용되도록 강제
+                                    backgroundColor: 'rgba(46, 196, 182, 0.45) !important',
+                                    color: 'rgb(0, 0, 0) !important',
+                                    borderColor: 'rgba(46, 196, 182, 0.45) !important',
+                                    '& .MuiChip-label': { color: 'rgb(0, 0, 0) !important' },
+                                    '&:hover': { backgroundColor: 'rgba(46, 196, 182, 0.6) !important' },
+                                }
+                                : {
+                                    backgroundColor: 'transparent',
+                                    color: 'text.primary',
+                                    borderColor: 'grey.300',
+                                    '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
+                                }),
+                        }}
+                    />
+                );
+            })}
+        </Box>
     );
 }
 

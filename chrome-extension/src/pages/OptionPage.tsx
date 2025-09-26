@@ -1,7 +1,8 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+// import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Logo, BlackButton as Button } from 'components';
+import Tag from 'components/OptionPage/Tag';
 import StarRating from 'components/OptionPage/StarRating';
 import Dropdown from 'components/OptionPage/Dropdown';
 import { fetchAndStoreCurrentVideoInfo, analyzeCurrentVideo, saveAnalysisResultToStorage, UserProfilePayload, saveUserProfileToStorage } from 'services/chromeVideo';
@@ -130,7 +131,6 @@ function OptionPage() {
                     <p className='mb-2.5 font-medium font-spoqa'>Language Level</p>
                     <Dropdown
                         items={languageLevels}
-                        placeholder=""
                         value={languageLevelId}
                         onChange={(id) => setLanguageLevelId(id)}
                     />
@@ -139,29 +139,7 @@ function OptionPage() {
                 {/* 3. Interests 그룹 */}
                 <div className="flex w-full flex-col items-start">
                     <p className='mb-2.5 font-medium font-spoqa'>Interests</p>
-                    <div className="flex w-full flex-wrap gap-2">
-                        {interestOptions.map((item) => {
-                            const isSelected = selectedInterests.includes(item.id);
-                            return (
-                                <motion.button
-                                    key={item.id}
-                                    type="button"
-                                    onClick={() => toggleInterest(item.id)}
-                                    className={`rounded-[2.5vw] px-3 py-1 text-sm font-spoqa transition-colors border-0 outline-none ring-0 focus:outline-none focus:ring-0 active:outline-none ${
-                                        isSelected
-                                            ? 'bg-black text-white'
-                                            : 'bg-gray-100 text-gray-700'
-                                    }`}
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.97 }}
-                                    transition={{ type: 'spring', stiffness: 400, damping: 18 }}
-                                    aria-pressed={isSelected}
-                                >
-                                    {item.label}
-                                </motion.button>
-                            );
-                        })}
-                    </div>
+                    <Tag items={interestOptions} value={selectedInterests} onChange={setSelectedInterests} />
                 </div>
             </div>
             
