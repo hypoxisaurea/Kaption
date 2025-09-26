@@ -1,7 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Logo, BlackButton as Button, StarRating } from 'components';
+import { Logo, BlackButton as Button } from 'components';
+import StarRating from 'components/OptionPage/StarRating';
 import Dropdown from 'components/OptionPage/Dropdown';
 import { fetchAndStoreCurrentVideoInfo, analyzeCurrentVideo, saveAnalysisResultToStorage, UserProfilePayload, saveUserProfileToStorage } from 'services/chromeVideo';
 import sampleAnalysis from 'assets/data/sample_analysis_result.json';
@@ -107,6 +108,12 @@ function OptionPage() {
             navigate('/content');
         }
     };
+    
+    // 별점 변경을 처리하는 새로운 핸들러 함수 추가
+    const handleStarRatingChange = (newValue: number | null) => {
+        // null을 안전하게 number로 변환하여 상태 업데이트
+        setFamiliarity(newValue ?? 0);
+    };
 
     return (
         <div className="flex h-screen flex-col items-center justify-center overflow-hidden bg-white">
@@ -114,7 +121,8 @@ function OptionPage() {
                 {/* 1. Familiarity 그룹 */}
                 <div className="flex w-full flex-row items-center justify-between mb-5">
                     <p className='mb-2.5 font-medium font-spoqa'>Familiarity</p>
-                    <StarRating value={familiarity} onChange={setFamiliarity} />
+                    {/* 명확하게 정의된 핸들러 함수를 전달 */}
+                    <StarRating value={familiarity} onChange={handleStarRatingChange} />
                 </div>
                 
                 {/* 2. Language Level 그룹 */}
