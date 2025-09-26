@@ -45,7 +45,7 @@ function VideoInfo() {
             const next = data.currentVideoInfo as unknown;
             setVideoInfo(isVideoInfo(next) ? next : null);
         } catch (e) {
-            setError('영상 정보를 불러오는 중 오류가 발생했습니다.');
+            setError('Error occurred while loading video information.');
         } finally {
             setLoading(false);
         }
@@ -83,8 +83,8 @@ function VideoInfo() {
                     <p className='text-sm text-gray-500'>Loading...</p>
                 )}
                 {!loading && !error && !videoInfo && (
-                    <div className='text-sm text-gray-600'>
-                        영상 정보가 없습니다. 확장프로그램 환경 외 실행 시 숨김 처리됩니다.
+                    <div className='text-center justify-center items-center text-[0.7rem] text-[#cccccc]'>
+                        There is no video information. <br/> It is hidden when executed outside the extension environment.
                     </div>
                 )}
                 {!loading && !error && videoInfo && (

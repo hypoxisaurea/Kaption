@@ -58,6 +58,7 @@ function ContentPage() {
             modalCheckpoint: checkpoint,
             deepDiveItem,
         });
+
         // 네비게이션 호출 후 로딩 상태 해제
         setTimeout(() => setLoadingCardId(null), 0);
     };
@@ -167,20 +168,20 @@ function ContentPage() {
 
     return (
         <div className={getPageClass()}>
-            <div className='w-full box-border flex justify-center px-10 py-4 overflow-x-hidden'>
+            <div className='w-full box-border flex justify-center px-[5vw] py-[3vh] overflow-x-hidden'>
                 <div className='w-full min-w-0 max-w-md sm:max-w-lg lg:max-w-2xl'>
                     <VideoInfo />
                     
                     {loading && (
                         <div className="flex items-center justify-center py-8">
                             <div className="size-8 rounded-full border-b-2 border-blue-600 animate-spin"></div>
-                            <span className="ml-3 text-gray-600">분석 중...</span>
+                            <span className="ml-3 text-gray-600">Analyzing...</span>
                         </div>
                     )}
 
                     {error && (
                         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-                            <div className="text-red-800 font-medium">오류 발생</div>
+                            <div className="text-red-800 font-medium">Error occured</div>
                             <div className="text-red-700 text-sm mt-1">{error}</div>
                         </div>
                     )}
@@ -203,9 +204,9 @@ function ContentPage() {
 
                     {analysisData && (!analysisData.checkpoints || analysisData.checkpoints.length === 0) && (
                         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-6">
-                            <div className="text-yellow-800 font-medium">분석 결과 없음</div>
+                            <div className="text-yellow-800 font-medium">Analysis result doesn't exist</div>
                             <div className="text-yellow-700 text-sm mt-1">
-                                이 비디오에서 분석할 문화적 맥락을 찾을 수 없습니다.
+                                I can't find any cultural context to analyze in this video.
                             </div>
                         </div>
                     )}
