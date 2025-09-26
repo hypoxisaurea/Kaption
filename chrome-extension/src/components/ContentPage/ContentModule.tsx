@@ -1,5 +1,6 @@
 import React from 'react'
 import HoverOverlay from './HoverOverlay'
+import Spinner from './Spinner'
 import usePageTransition from 'hooks/usePageTransition'
 
 interface Explanation {
@@ -92,9 +93,9 @@ function ContentModule({ checkpoint, onClick, isLoading = false }: ContentModule
                 </div>
             )}
             {isLoading && (
-                <div className="absolute inset-0 flex items-center justify-center rounded-[3.5vw] bg-white/70 backdrop-blur-[1px]">
+                <div className="absolute inset-0 flex items-center justify-center rounded-[3.5vw] bg-white/70 backdrop-blur-[0.4vw]">
                     <div className="flex flex-col items-center gap-2">
-                        <div className="size-8 rounded-full border-2 border-gray-300 border-t-black animate-spin"></div>
+                        <Spinner />
                         <div className="text-[0.85rem] text-[#1b1b1b]">Preparing your study pack…</div>
                     </div>
                 </div>
