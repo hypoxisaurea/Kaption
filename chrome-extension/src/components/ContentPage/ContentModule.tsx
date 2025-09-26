@@ -59,7 +59,7 @@ function ContentModule({ checkpoint, onClick, isLoading = false }: ContentModule
                 <div className="text-[1rem] font-bold text-[#1b1b1b]">
                     {checkpoint.timestamp_formatted}
                 </div>
-                <div className="max-w-[30vw] item-center rounded-[5.5vw] bg-secondary/45 px-[4.5vw] py-[0.8vh] text-[0.8rem] text-end" style={{ whiteSpace: 'pre-line' }}>
+                <div className="max-w-[30vw] item-center rounded-[4.5vw] bg-secondary/45 px-[4.5vw] py-[0.8vh] text-[0.8rem] text-end" style={{ whiteSpace: 'pre-line' }}>
                         {formattedKeyword}
                 </div>
             </div>
@@ -69,11 +69,11 @@ function ContentModule({ checkpoint, onClick, isLoading = false }: ContentModule
             </div>
 
             <div className="mb-[6vh]">
-                <p className="text-[0.9rem] font-normal leading-relaxed text-[#1b1b1b]">{checkpoint.explanation.main}</p>
+                <p className="text-[0.9rem] font-light leading-relaxed text-[#1b1b1b]">{checkpoint.explanation.main}</p>
             </div>
             
             <div className="mb-[4vh]">
-                <h3 className="text-[0.95rem] font-normal text-[#1b1b1b]">Tip</h3>
+                <h3 className="text-[0.95rem] font-normal text-[#1b1b1b]">Tip!</h3>
                 <p className="text-[0.9rem] font-light leading-relaxed text-[#1b1b1b]">{checkpoint.explanation.tip}</p>
             </div>
             
