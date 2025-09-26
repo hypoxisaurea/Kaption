@@ -82,29 +82,33 @@ function DeepDiveModal({ checkpoint, deepDiveItem, onClose }: DeepDiveModalProps
     return () => window.clearTimeout(id);
   }, [attemptResult, stage]);
 
+  const formattedKeyword = checkpoint.trigger_keyword.includes('/')
+  ? checkpoint.trigger_keyword.replace('/', '\n')
+  : checkpoint.trigger_keyword;
+
   return createPortal((
     <div className="fixed w-full h-screen inset-0 z-50">
 
       {/* Fullscreen Panel */}
       <div className={`absolute w-full h-screen inset-0 bg-white font-spoqa flex flex-col overflow-hidden modal-panel modal-panel--open`}>
         {/* Header */}
-        <div className="shrink-0 flex items-center justify-between px-4 py-3">
+        <div className="shrink-0 flex items-center justify-between px-[4vw] mt-[5vh] mb-[3vh]">
           <img src={closeButton}
             onClick={onClose}
-            className="w-[2vw] h-auto"
+            className="w-[5vw] h-auto"
           />
         </div>
 
         {/* Content (fills the remaining viewport height) */}
-        <div className="flex-1 px-4 py-4">
-          <div className="w-full min-full bg-white rounded-none px-4 py-5 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+        <div className="flex-1 px-[4vw] py-[2vh]">
+          <div className="w-full min-h-full bg-white rounded-none px-[4vw] py-5 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
           {/* Header */}
           <div className="flex items-start justify-between mb-[6vh]">
             <div className="text-[1rem] font-bold text-[#1b1b1b]">
               {checkpoint.timestamp_formatted}
             </div>
-            <div className="max-w-[30vw] border-2 bg-secondary/45 px-[3vw] py-[0.6vh] rounded-full text-[0.8rem] font-medium">
-              {checkpoint.trigger_keyword}
+            <div className="max-w-[30vw] items-center rounded-[4vw] bg-secondary/45 px-[4vw] py-[0.75vh] text-[0.75rem] text-end" style={{ whiteSpace: 'pre-line' }}>
+              {formattedKeyword}
             </div>
           </div>
 
@@ -158,7 +162,7 @@ function DeepDiveModal({ checkpoint, deepDiveItem, onClose }: DeepDiveModalProps
                 </button>
               </div>
               <div className="flex gap-2">
-                <button className="px-4 py-2 rounded-[3vw] bg-black text-white" onClick={() => actions.goQuiz()}>Start Quiz</button>
+                <button className="px-4 py-[2vh] rounded-[3vw] bg-black text-white" onClick={() => actions.goQuiz()}>Start Quiz</button>
               </div>
             </div>
           )}
@@ -230,7 +234,7 @@ function DeepDiveModal({ checkpoint, deepDiveItem, onClose }: DeepDiveModalProps
         </div>
         {/* Mascot Overlay */}
         {mascotSrc && (
-          <div className="pointer-events-none absolute right-4 bottom-6 z-[2] transition-all duration-500 ease-out">
+          <div className="pointer-events-none absolute right-4 bottom-6 z-[30] transition-all duration-500 ease-out">
             <img
               src={mascotSrc}
               alt="Tutor mascot"
@@ -255,5 +259,3 @@ function DeepDiveModal({ checkpoint, deepDiveItem, onClose }: DeepDiveModalProps
 }
 
 export default DeepDiveModal;
-
-
