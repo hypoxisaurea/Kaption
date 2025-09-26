@@ -4,4 +4,3 @@ export { default as StartPage } from "./StartPage";
 export { default as OptionPage } from "./OptionPage";
 export { default as MyPage } from "./MyPage";
 export { default as LoadingPage } from "./LoadingPage";
-export { default as DeepDivePage } from "./DeepDivePage";

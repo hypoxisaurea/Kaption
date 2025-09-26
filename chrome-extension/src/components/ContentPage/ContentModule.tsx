@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import HoverOverlay from './HoverOverlay'
 import Spinner from './Spinner'
 import usePageTransition from 'hooks/usePageTransition'
@@ -24,10 +24,19 @@ interface ContentModuleProps {
     checkpoint: Checkpoint;
     onClick?: (checkpoint: Checkpoint) => void;
     isLoading?: boolean;
+    appearDelayMs?: number;
 }
 
-function ContentModule({ checkpoint, onClick, isLoading = false }: ContentModuleProps) {
+function ContentModule({ checkpoint, onClick, isLoading = false, appearDelayMs = 0 }: ContentModuleProps) {
     const { expandState } = usePageTransition();
+    const [isShown, setIsShown] = useState(false);
+
+    useEffect(() => {
+        const id = window.setTimeout(() => setIsShown(true), Math.max(0, appearDelayMs));
+        return () => {
+            window.clearTimeout(id);
+        };
+    }, [appearDelayMs]);
     
     const handleClick = () => {
         if (onClick) {
@@ -55,7 +64,10 @@ function ContentModule({ checkpoint, onClick, isLoading = false }: ContentModule
             onClick={handleClick}
             disabled={isLoading}
         >
-            <div id={`checkpoint-${checkpoint.timestamp_seconds}-${checkpoint.trigger_keyword}`} className={getCardClass()}>
+            <div
+                id={`checkpoint-${checkpoint.timestamp_seconds}-${checkpoint.trigger_keyword}`}
+                className={`${getCardClass()} transition-all duration-700 ease-out will-change-transform ${isShown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
+            >
             <div className="mb-[6vh] flex items-start justify-between">
                 <div className="text-[1rem] font-bold text-[#1b1b1b]">
                     {checkpoint.timestamp_formatted}
