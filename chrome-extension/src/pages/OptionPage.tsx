@@ -118,17 +118,16 @@ function OptionPage() {
 
     return (
         <div className="flex h-screen flex-col items-center justify-center overflow-hidden bg-white">
-            <div className="w-full max-w-[75%] px-8"> {/* w-full과 max-w-sm을 함께 사용하여 반응형 너비 설정 */}
+            <div className="w-full max-w-[75%] px-8">
                 {/* 1. Familiarity 그룹 */}
                 <div className="flex w-full flex-row items-center justify-between mb-5">
                     <p className='mb-2.5 font-medium font-spoqa'>Familiarity</p>
-                    {/* 명확하게 정의된 핸들러 함수를 전달 */}
                     <StarRating value={familiarity} onChange={handleStarRatingChange} />
                 </div>
                 
                 {/* 2. Language Level 그룹 */}
                 <div className="flex w-full flex-col items-start mb-5">
-                    <p className='mb-2.5 font-medium font-spoqa'>Language Level</p>
+                    <p className='mb-[1.5vh] font-medium font-spoqa'>Language Level</p>
                     <Dropdown
                         items={languageLevels}
                         value={languageLevelId}
@@ -138,7 +137,7 @@ function OptionPage() {
                 
                 {/* 3. Interests 그룹 */}
                 <div className="flex w-full flex-col items-start">
-                    <p className='mb-2.5 font-medium font-spoqa'>Interests</p>
+                    <p className='mb-[1.5vh] font-medium font-spoqa'>Interests</p>
                     <Tag items={interestOptions} value={selectedInterests} onChange={setSelectedInterests} />
                 </div>
             </div>

@@ -43,12 +43,13 @@ function TagSelector({ items, value, onChange }: TagSelectorProps) {
                         variant={isSelected ? 'filled' : 'outlined'}
                         onClick={() => handleTagClick(item.id)}
                         sx={{ borderRadius: '9999px',
+                            fontSize: '0.85rem',
                             ...(isSelected
                                 ? {
                                     // Chip 기본 변형 스타일보다 우선 적용되도록 강제
                                     backgroundColor: 'rgba(46, 196, 182, 0.45) !important',
                                     color: 'rgb(0, 0, 0) !important',
-                                    borderColor: 'rgba(46, 196, 182, 0.45) !important',
+                                    borderColor: 'transparent',
                                     '& .MuiChip-label': { color: 'rgb(0, 0, 0) !important' },
                                     '&:hover': { backgroundColor: 'rgba(46, 196, 182, 0.6) !important' },
                                 }

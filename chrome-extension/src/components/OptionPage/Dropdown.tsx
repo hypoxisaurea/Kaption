@@ -42,7 +42,7 @@ function Dropdown({ items, value = null, onChange }: DropdownProps) {
                     inputProps={{ 'aria-label': 'Dropdown select' }}
                 >
                     {items.map(item => (
-                        <MenuItem key={item.id} value={item.id}>{item.label}</MenuItem>
+                        <MenuItem sx={{ fontSize: '0.9rem', color: '#1b1b1b' }} key={item.id} value={item.id}>{item.label}</MenuItem>
                     ))}
                 </Select>
             </FormControl>

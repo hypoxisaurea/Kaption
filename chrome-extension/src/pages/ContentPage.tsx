@@ -10,6 +10,7 @@ import useProgressiveCheckpoints from 'hooks/useProgressiveCheckpoints';
 import LoadingIndicator from 'components/common/LoadingIndicator';
 import ErrorBanner from 'components/common/ErrorBanner';
 import EmptyAnalysisBanner from 'components/common/EmptyAnalysisBanner';
+import Header from 'components/common/WhiteHeader';
 
 function ContentPage() {
   const { isVisible, expandState } = usePageTransition();
@@ -60,6 +61,11 @@ function ContentPage() {
     <div className={getPageClass()}>
       <div className='w-full box-border flex justify-center px-[5vw] py-[2vh] overflow-x-hidden'>
         <div className='w-full min-w-0 max-w-md sm:max-w-lg lg:max-w-2xl'>
+
+          <div className='py-[2vh] mb-[3vh]'>
+            <Header />
+          </div>
+          
           <VideoInfo />
 
           {loading && (<LoadingIndicator />)}

@@ -14,7 +14,7 @@ const StyledRating = styled(Rating)({
     color: 'rgba(255, 140, 122)',
   },
   '& .MuiRating-iconHover': {
-    color: '#ff3d47',
+    color: '#FFCCC4',
   },
 });
 
@@ -29,8 +29,8 @@ function StarRating({ value, onChange }: StarRatingProps) {
         }}
         getLabelText={(value: number) => `${value} Heart${value !== 1 ? 's' : ''}`}
         precision={1}
-        icon={<FavoriteIcon fontSize="inherit" />}
-        emptyIcon={<FavoriteBorderIcon fontSize="inherit" />}
+        icon={<FavoriteIcon fontSize="medium" />}
+        emptyIcon={<FavoriteBorderIcon fontSize="medium" />}
       />
     </div>
   );

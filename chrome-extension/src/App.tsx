@@ -12,18 +12,12 @@ function App() {
   const isVisible = useFadeIn();
   const location = useLocation();
   const showColorHeader = location.pathname === '/my';
-  const showWhiteHeader = location.pathname === '/content';
 
   return (
     <div className="flex h-screen w-full flex-col">
       {showColorHeader && (
         <div className={`page-transition ${isVisible ? 'page-transition-fade-in' : 'page-transition-fade-out'}`}>
           <ColorHeader />
-        </div>
-      )}
-      {showWhiteHeader && (
-        <div className={`page-transition ${isVisible ? 'page-transition-fade-in' : 'page-transition-fade-out'}`}>
-          <WhiteHeader />
         </div>
       )}
       <div className={`relative flex-1 overflow-y-auto page-transition ${isVisible ? 'page-transition-fade-in' : 'page-transition-fade-out'}`}>
