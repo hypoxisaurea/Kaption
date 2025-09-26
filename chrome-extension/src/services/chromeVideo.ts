@@ -1,4 +1,4 @@
-import { VideoInfoData } from "types/video";
+import { VideoInfoData } from "types/video"; // 'types/video' 경로에 VideoInfoData 타입이 정의되어 있다고 가정합니다.
 /** Analyze API response shape (subset we care about) */
 export type AnalyzeResponse = {
   video_info: {
@@ -22,6 +22,13 @@ export type AnalyzeResponse = {
   analysis_id: string;
   status: string;
   error?: string | null;
+};
+
+// Chrome 탭의 기본적인 정보 타입을 정의합니다. (필요하다면 더 구체적으로 정의할 수 있습니다)
+type ChromeTab = {
+  id?: number;
+  url?: string;
+  // ... 기타 필요한 탭 속성들
 };
 
 const YOUTUBE_URL_PATTERN = [
@@ -121,7 +128,7 @@ export async function extractVideoInfoFromActiveTab(
               if (types?.includes("VideoObject")) {
                 const keywords = Array.isArray(obj?.keywords)
                   ? obj.keywords.join(", ")
-                  : obj?.keywords ?? null;
+                  : (obj?.keywords ?? null);
                 return {
                   name: obj?.name ?? null,
                   description: obj?.description ?? null,
@@ -222,6 +229,20 @@ export async function saveAnalysisResultToStorage(
     try {
       localStorage.setItem("lastAnalysisResult", JSON.stringify(result));
     } catch {}
+  }
+}
+
+// 이 함수가 추가되었습니다.
+export async function getAnalysisResultFromStorage(): Promise<AnalyzeResponse | null> {
+  if (chrome?.storage?.local) {
+    const r = await chrome.storage.local.get(["lastAnalysisResult"]);
+    return (r?.lastAnalysisResult as AnalyzeResponse | undefined) ?? null;
+  }
+  try {
+    const raw = localStorage.getItem("lastAnalysisResult");
+    return raw ? (JSON.parse(raw) as AnalyzeResponse) : null;
+  } catch {
+    return null;
   }
 }
 
