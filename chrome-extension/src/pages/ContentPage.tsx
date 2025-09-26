@@ -168,7 +168,7 @@ function ContentPage() {
 
     return (
         <div className={getPageClass()}>
-            <div className='w-full box-border flex justify-center px-[5vw] py-[3vh] overflow-x-hidden'>
+            <div className='w-full box-border flex justify-center px-[5vw] py-[2vh] overflow-x-hidden'>
                 <div className='w-full min-w-0 max-w-md sm:max-w-lg lg:max-w-2xl'>
                     <VideoInfo />
                     

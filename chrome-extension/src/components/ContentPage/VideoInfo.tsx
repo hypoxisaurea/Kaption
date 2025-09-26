@@ -27,6 +27,7 @@ function getDevDummyVideoInfo(): VideoInfoData {
         height: 720,
     };
 }
+
 function VideoInfo() {
     const [videoInfo, setVideoInfo] = useState<null | VideoInfoData>(null);
     const [loading, setLoading] = useState<boolean>(true);
@@ -78,7 +79,7 @@ function VideoInfo() {
 
     return (
         <div className='flex flex-col items-center w-full'>
-            <div className='w-full py-4'>
+            <div className='w-full'>
                 {loading && (
                     <p className='text-sm text-gray-500'>Loading...</p>
                 )}
