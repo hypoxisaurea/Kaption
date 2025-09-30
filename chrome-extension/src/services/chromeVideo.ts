@@ -220,6 +220,20 @@ export async function saveVideoInfoToStorage(
   }
 }
 
+export async function getVideoInfoFromStorage(): Promise<VideoInfoData | null> {
+  if (chrome?.storage?.local) {
+    const result = await chrome.storage.local.get(["currentVideoInfo"]);
+    return (result.currentVideoInfo as VideoInfoData) || null;
+  }
+
+  try {
+    const raw = localStorage.getItem("currentVideoInfo");
+    return raw ? (JSON.parse(raw) as VideoInfoData) : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function saveAnalysisResultToStorage(
   result: AnalyzeResponse
 ): Promise<void> {
@@ -455,6 +469,150 @@ export async function playYouTubeVideo(): Promise<boolean> {
   } catch (error) {
     console.error("Failed to play YouTube video:", error);
     return false;
+  }
+}
+
+// ===== Video Analysis History Storage =====
+export type VideoAnalysisHistory = {
+  videoId: string;
+  videoInfo: VideoInfoData;
+  analysisResult: AnalyzeResponse;
+  deepDiveResult?: DeepDiveBatchResponse;
+  createdAt: string;
+  updatedAt: string;
+};
+
+/**
+ * 영상별 분석 결과를 저장합니다.
+ */
+export async function saveVideoAnalysisToHistory(
+  videoInfo: VideoInfoData,
+  analysisResult: AnalyzeResponse,
+  deepDiveResult?: DeepDiveBatchResponse
+): Promise<void> {
+  const videoId =
+    new URLSearchParams(new URL(videoInfo.url).search).get("v") ||
+    videoInfo.url;
+  const now = new Date().toISOString();
+
+  const historyItem: VideoAnalysisHistory = {
+    videoId,
+    videoInfo,
+    analysisResult,
+    deepDiveResult,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  if (chrome?.storage?.local) {
+    const key = `videoAnalysis_${videoId}`;
+    await chrome.storage.local.set({ [key]: historyItem });
+
+    // 전체 목록도 업데이트
+    const existing = await chrome.storage.local.get(["videoAnalysisList"]);
+    const list = existing.videoAnalysisList || [];
+    const existingIndex = list.findIndex(
+      (item: VideoAnalysisHistory) => item.videoId === videoId
+    );
+
+    if (existingIndex >= 0) {
+      list[existingIndex] = historyItem;
+    } else {
+      list.unshift(historyItem); // 최신 항목을 맨 앞에 추가
+    }
+
+    await chrome.storage.local.set({ videoAnalysisList: list });
+  } else {
+    try {
+      const key = `videoAnalysis_${videoId}`;
+      localStorage.setItem(key, JSON.stringify(historyItem));
+
+      // 전체 목록도 업데이트
+      const existing = localStorage.getItem("videoAnalysisList");
+      const list = existing ? JSON.parse(existing) : [];
+      const existingIndex = list.findIndex(
+        (item: VideoAnalysisHistory) => item.videoId === videoId
+      );
+
+      if (existingIndex >= 0) {
+        list[existingIndex] = historyItem;
+      } else {
+        list.unshift(historyItem);
+      }
+
+      localStorage.setItem("videoAnalysisList", JSON.stringify(list));
+    } catch {}
+  }
+}
+
+/**
+ * 저장된 모든 영상 분석 결과를 가져옵니다.
+ */
+export async function getAllVideoAnalysisHistory(): Promise<
+  VideoAnalysisHistory[]
+> {
+  if (chrome?.storage?.local) {
+    const result = await chrome.storage.local.get(["videoAnalysisList"]);
+    return (result.videoAnalysisList as VideoAnalysisHistory[]) || [];
+  }
+
+  try {
+    const raw = localStorage.getItem("videoAnalysisList");
+    return raw ? (JSON.parse(raw) as VideoAnalysisHistory[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * 특정 영상의 분석 결과를 가져옵니다.
+ */
+export async function getVideoAnalysisHistory(
+  videoId: string
+): Promise<VideoAnalysisHistory | null> {
+  if (chrome?.storage?.local) {
+    const key = `videoAnalysis_${videoId}`;
+    const result = await chrome.storage.local.get([key]);
+    return (result[key] as VideoAnalysisHistory) || null;
+  }
+
+  try {
+    const key = `videoAnalysis_${videoId}`;
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as VideoAnalysisHistory) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 특정 영상의 분석 결과를 삭제합니다.
+ */
+export async function deleteVideoAnalysisHistory(
+  videoId: string
+): Promise<void> {
+  if (chrome?.storage?.local) {
+    const key = `videoAnalysis_${videoId}`;
+    await chrome.storage.local.remove([key]);
+
+    // 전체 목록에서도 제거
+    const existing = await chrome.storage.local.get(["videoAnalysisList"]);
+    const list = (existing.videoAnalysisList as VideoAnalysisHistory[]) || [];
+    const filteredList = list.filter((item) => item.videoId !== videoId);
+    await chrome.storage.local.set({ videoAnalysisList: filteredList });
+  } else {
+    try {
+      const key = `videoAnalysis_${videoId}`;
+      localStorage.removeItem(key);
+
+      // 전체 목록에서도 제거
+      const existing = localStorage.getItem("videoAnalysisList");
+      const list = existing ? JSON.parse(existing) : [];
+      const filteredList = list.filter(
+        (item: VideoAnalysisHistory) => item.videoId !== videoId
+      );
+      localStorage.setItem("videoAnalysisList", JSON.stringify(filteredList));
+    } catch {}
   }
 }
 

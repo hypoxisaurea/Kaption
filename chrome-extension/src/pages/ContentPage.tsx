@@ -11,7 +11,7 @@ import LoadingIndicator from 'components/common/LoadingIndicator';
 import ErrorBanner from 'components/common/ErrorBanner';
 import EmptyAnalysisBanner from 'components/common/EmptyAnalysisBanner';
 import Header from 'components/common/WhiteHeader';
-import { pauseYouTubeVideo, playYouTubeVideo, getVideoPlaybackState, clearVideoPlaybackState } from 'services/chromeVideo';
+import { pauseYouTubeVideo, playYouTubeVideo, getVideoPlaybackState, clearVideoPlaybackState, saveVideoAnalysisToHistory, getVideoInfoFromStorage } from 'services/chromeVideo';
 
 function ContentPage() {
   const { isVisible, expandState } = usePageTransition();
@@ -68,6 +68,24 @@ function ContentPage() {
 
     restoreVideoPlayback();
   }, []);
+
+  // 분석 데이터가 로드되면 저장
+  useEffect(() => {
+    const saveAnalysisToHistory = async () => {
+      if (analysisData && !loading && !error) {
+        try {
+          const videoInfo = await getVideoInfoFromStorage();
+          if (videoInfo) {
+            await saveVideoAnalysisToHistory(videoInfo, analysisData);
+          }
+        } catch (error) {
+          console.error('Failed to save analysis to history:', error);
+        }
+      }
+    };
+
+    saveAnalysisToHistory();
+  }, [analysisData, loading, error]);
 
   // 진행형/정적 렌더링 로직은 훅으로 이동
 
