@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 // import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Logo, BlackButton as Button } from 'components';
 import Tag from 'components/OptionPage/Tag';
 import StarRating from 'components/OptionPage/StarRating';
 import Dropdown from 'components/OptionPage/Dropdown';
-import { fetchAndStoreCurrentVideoInfo, analyzeCurrentVideo, saveAnalysisResultToStorage, UserProfilePayload, saveUserProfileToStorage } from 'services/chromeVideo';
+import { fetchAndStoreCurrentVideoInfo, analyzeCurrentVideo, saveAnalysisResultToStorage, UserProfilePayload, saveUserProfileToStorage, pauseYouTubeVideo, saveVideoPlaybackState } from 'services/chromeVideo';
 import sampleAnalysis from 'assets/data/sample_analysis_result.json';
 
 function OptionPage() {
@@ -36,6 +36,21 @@ function OptionPage() {
             prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]
         );
     };
+
+    // OptionPage 진입 시 YouTube 영상 일시정지
+    useEffect(() => {
+        const pauseVideoOnEnter = async () => {
+            try {
+                await pauseYouTubeVideo();
+                await saveVideoPlaybackState(true);
+            } catch (error) {
+                console.error('Failed to pause YouTube video on OptionPage enter:', error);
+                await saveVideoPlaybackState(false);
+            }
+        };
+
+        pauseVideoOnEnter();
+    }, []);
 
     const resolveLanguageLevel = (id: number | null): UserProfilePayload['language_level'] | null => {
         if (id === 1) return 'Beginner';
