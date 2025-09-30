@@ -22,6 +22,7 @@ from app.models.schemas import (
     DeepDiveBatchRequest, DeepDiveBatchResponse
 )
 from app.services.youtube_analyzer import YouTubeCulturalAnalyzer
+from app.services.rag import CultureRAG
 
 # 환경 설정
 load_dotenv()
@@ -35,14 +36,15 @@ logger = logging.getLogger(__name__)
 if os.name == 'nt':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
 
-# 전역 analyzer 인스턴스
+# 전역 analyzer 인스턴스 및 RAG 인덱스
 analyzer: YouTubeCulturalAnalyzer = None
+culture_rag: CultureRAG | None = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """앱 생명주기 관리"""
-    global analyzer
+    global analyzer, culture_rag
 
     # 시작 시
     logger.info("Initializing Kaption API Server...")
@@ -52,7 +54,19 @@ async def lifespan(app: FastAPI):
         logger.warning("GOOGLE_API_KEY not found in environment. Please set it in .env file")
 
     try:
-        analyzer = YouTubeCulturalAnalyzer()
+        # RAG 데이터셋 로드
+        from pathlib import Path
+        base_dir = Path(__file__).resolve().parents[2]  # kaption-backend/
+        dataset_path = base_dir / "culture_dataset.json"
+        culture_rag = CultureRAG()
+        loaded = culture_rag.load_from_json(str(dataset_path))
+        logger.info(f"Culture RAG loaded with {loaded} QA pairs from {dataset_path}")
+    except Exception as e:
+        logger.warning(f"RAG initialization failed: {e}")
+        culture_rag = None
+
+    try:
+        analyzer = YouTubeCulturalAnalyzer(rag=culture_rag)
         logger.info("YouTube Cultural Analyzer initialized successfully")
     except Exception as e:
         logger.error(f"Failed to initialize analyzer: {e}")
@@ -94,7 +108,8 @@ async def root():
         "status": "running",
         "version": "1.0.0",
         "description": "Korean Cultural Context Analysis for YouTube Videos",
-        "analyzer_status": "ready" if analyzer else "not initialized"
+        "analyzer_status": "ready" if analyzer else "not initialized",
+        "rag_status": "ready" if culture_rag and getattr(culture_rag, "loaded", False) else "not initialized"
     }
 
 
@@ -104,7 +119,8 @@ async def health_check():
     status_details = {
         "service": "healthy",
         "analyzer": "healthy" if analyzer else "unhealthy",
-        "api_key": "configured" if os.getenv('GOOGLE_API_KEY') else "missing"
+        "api_key": "configured" if os.getenv('GOOGLE_API_KEY') else "missing",
+        "rag": "healthy" if (culture_rag and getattr(culture_rag, "loaded", False)) else "unhealthy"
     }
 
     overall_status = all(

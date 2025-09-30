@@ -25,6 +25,7 @@ from app.models.schemas import (
     DeepDiveBatchRequest, DeepDiveBatchResponse, DeepDiveItem, QuizItem, QuizOption, TPSActivity, TPSThink, TPSShare, Recap, RecapCompact, RecapDetailed
 )
 from app.core.prompts import get_cultural_analysis_prompt, get_deepdive_batch_prompt
+from app.services.rag import CultureRAG
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -33,7 +34,7 @@ logger.setLevel(logging.DEBUG)
 class YouTubeCulturalAnalyzer:
     """Gemini API를 사용한 YouTube 영상 한국 문화 맥락 분석기"""
 
-    def __init__(self):
+    def __init__(self, rag: CultureRAG | None = None):
         """Initialize Gemini API client"""
         self.api_key = os.getenv('GOOGLE_API_KEY')
         if not self.api_key:
@@ -47,6 +48,9 @@ class YouTubeCulturalAnalyzer:
             legacy_genai.configure(api_key=self.api_key)
             self.client = None
             logger.info("Initialized legacy google.generativeai configuration (fallback mode)")
+
+        # Optional RAG index for retrieval-augmented prompts
+        self.rag: CultureRAG | None = rag
 
     def extract_video_id(self, url: str) -> Optional[str]:
         """YouTube URL에서 video ID 추출"""
@@ -757,7 +761,34 @@ Requirements:
                 "related_interests": cp.related_interests,
             })
 
-        prompt = get_deepdive_batch_prompt(user_profile.dict(), cp_payload)
+        # Build optional RAG contexts per checkpoint
+        rag_contexts: List[List[Dict[str, Any]]] | None = None
+        try:
+            if self.rag and getattr(self.rag, "loaded", False):
+                rag_contexts = []
+                for cp in cp_payload:
+                    # Query construction uses cultural cue + title + transcript snippet
+                    interests = ", ".join(user_profile.interests) if user_profile.interests else ""
+                    query_parts = [
+                        cp.get("trigger_keyword") or "",
+                        cp.get("context_title") or "",
+                        cp.get("segment_stt") or "",
+                        interests,
+                    ]
+                    query = " \n".join([p for p in query_parts if p])
+                    top = self.rag.retrieve_context(query=query, top_k=3)
+                    # keep compact fields only
+                    compact = [{
+                        "question": t["question"],
+                        "answer": t["answer"],
+                        "category": t.get("category", "")
+                    } for t in top]
+                    rag_contexts.append(compact)
+        except Exception as e:
+            logger.warning(f"RAG retrieval failed, proceeding without RAG: {e}")
+            rag_contexts = None
+
+        prompt = get_deepdive_batch_prompt(user_profile.dict(), cp_payload, rag_contexts)
 
         # Structured output schema
         schema = self._get_deepdive_batch_schema()

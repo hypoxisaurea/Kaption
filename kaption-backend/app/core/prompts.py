@@ -209,7 +209,7 @@ def get_scene_analysis_prompt() -> str:
 Please structure your response in JSON format."""
 
 
-def get_deepdive_batch_prompt(user_profile: dict, checkpoints: list[dict]) -> str:
+def get_deepdive_batch_prompt(user_profile: dict, checkpoints: list[dict], rag_contexts: list[list[dict]] | None = None) -> str:
     """
     Build prompt for DeepDive batch generation.
 
@@ -227,6 +227,11 @@ def get_deepdive_batch_prompt(user_profile: dict, checkpoints: list[dict]) -> st
     familiarity = user_profile.get("familiarity", 3)
     level = user_profile.get("language_level", "Intermediate")
 
+    # Optional RAG context payload (aligned per checkpoint)
+    rag_part = ""
+    if rag_contexts:
+        rag_part = f"\nRAG Contexts per checkpoint (aligned by index):\n{rag_contexts}\n\nGuidance for using RAG contexts:\n- Treat these Q/A pairs as authoritative cultural references.\n- Prefer RAG facts over assumptions.\n- If checkpoint content conflicts with RAG facts, clarify and align with RAG.\n- Borrow terminology and concise definitions when useful.\n"
+
     return f"""
 You are a friendly Korean culture tutor persona. Output VALID JSON only, strictly matching the provided response schema.
 
@@ -239,6 +244,8 @@ Allowed interest slugs (use only when needed): k-pop, k-drama, food, language, h
 
 Checkpoints (analyze each independently; keep trigger keywords short, 1–2 words):
 {checkpoints}
+
+{rag_part}
 
 For EACH checkpoint, produce these fields:
 1) recap:
