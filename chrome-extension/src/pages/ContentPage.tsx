@@ -11,6 +11,7 @@ import LoadingIndicator from 'components/common/LoadingIndicator';
 import ErrorBanner from 'components/common/ErrorBanner';
 import EmptyAnalysisBanner from 'components/common/EmptyAnalysisBanner';
 import Header from 'components/common/WhiteHeader';
+import { pauseYouTubeVideo, playYouTubeVideo, getVideoPlaybackState, clearVideoPlaybackState } from 'services/chromeVideo';
 
 function ContentPage() {
   const { isVisible, expandState } = usePageTransition();
@@ -18,6 +19,7 @@ function ContentPage() {
   const navigate = useNavigate();
   const { analysisData, loading, error } = useAnalysisData();
   const [loadingCardId, setLoadingCardId] = useState<string | null>(null);
+  const [wasVideoPlaying, setWasVideoPlaying] = useState<boolean>(false);
   const { handleCheckpointClick } = useCheckpointClick({ onLoadingChange: setLoadingCardId });
   const { sortedCheckpoints, visibleUntilIndex, isBootstrapping, isProgressiveMode } = useProgressiveCheckpoints({ analysisData, enabled: true });
 
@@ -50,12 +52,58 @@ function ContentPage() {
     }
   }, []);
 
+  // ContentPage 진입 시 저장된 영상 재생 상태 확인 및 재개
+  useEffect(() => {
+    const restoreVideoPlayback = async () => {
+      try {
+        const wasPlaying = await getVideoPlaybackState();
+        if (wasPlaying) {
+          await playYouTubeVideo();
+          await clearVideoPlaybackState();
+        }
+      } catch (error) {
+        console.error('Failed to restore YouTube video playback:', error);
+      }
+    };
+
+    restoreVideoPlayback();
+  }, []);
+
   // 진행형/정적 렌더링 로직은 훅으로 이동
 
   // 모달 상태: location.state?.modalCheckpoint
   const navState = (location.state as any) || undefined;
   const modalCheckpoint = navState?.modalCheckpoint as any | undefined;
   const modalDeepDiveItem = navState?.deepDiveItem as any | undefined;
+
+  // ContentModule 클릭 시 YouTube 영상 일시정지
+  const handleContentModuleClick = async (checkpoint: any) => {
+    // 현재 영상이 재생 중인지 확인하고 일시정지
+    try {
+      await pauseYouTubeVideo();
+      setWasVideoPlaying(true);
+    } catch (error) {
+      console.error('Failed to pause YouTube video:', error);
+      setWasVideoPlaying(false);
+    }
+    
+    // 기존 클릭 핸들러 실행
+    handleCheckpointClick(checkpoint);
+  };
+
+  // DeepDiveModal 종료 시 YouTube 영상 재개
+  const handleModalClose = async () => {
+    // 이전에 재생 중이었다면 재개
+    if (wasVideoPlaying) {
+      try {
+        await playYouTubeVideo();
+      } catch (error) {
+        console.error('Failed to resume YouTube video:', error);
+      }
+    }
+    setWasVideoPlaying(false);
+    navigate(-1);
+  };
 
   return (
     <div className={getPageClass()}>
@@ -81,7 +129,7 @@ function ContentPage() {
                   <ContentModule
                     key={`${checkpoint.timestamp_seconds}-${index}`}
                     checkpoint={checkpoint}
-                    onClick={handleCheckpointClick}
+                    onClick={handleContentModuleClick}
                     isLoading={loadingCardId === cardId}
                     appearDelayMs={appearDelayMs}
                   />
@@ -99,7 +147,7 @@ function ContentPage() {
         <DeepDiveModal
           checkpoint={modalCheckpoint}
           deepDiveItem={modalDeepDiveItem}
-          onClose={() => navigate(-1)}
+          onClose={handleModalClose}
         />
       )}
     </div>

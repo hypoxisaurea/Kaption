@@ -398,3 +398,107 @@ export async function saveDeepDiveResultToStorage(
     } catch {}
   }
 }
+
+// ===== YouTube Playback Control =====
+/**
+ * YouTube 영상을 일시정지합니다.
+ */
+export async function pauseYouTubeVideo(): Promise<boolean> {
+  const tab = await getActiveYouTubeTab();
+  if (!tab?.id) return false;
+  if (!chrome?.scripting) return false;
+
+  try {
+    const results = await chrome.scripting.executeScript({
+      target: { tabId: tab.id, allFrames: false },
+      func: () => {
+        const video = document.querySelector(
+          "video"
+        ) as HTMLVideoElement | null;
+        if (!video) return false;
+        video.pause();
+        return true;
+      },
+    });
+
+    const first = Array.isArray(results) ? results[0] : null;
+    return (first?.result as boolean) ?? false;
+  } catch (error) {
+    console.error("Failed to pause YouTube video:", error);
+    return false;
+  }
+}
+
+/**
+ * YouTube 영상을 재생합니다.
+ */
+export async function playYouTubeVideo(): Promise<boolean> {
+  const tab = await getActiveYouTubeTab();
+  if (!tab?.id) return false;
+  if (!chrome?.scripting) return false;
+
+  try {
+    const results = await chrome.scripting.executeScript({
+      target: { tabId: tab.id, allFrames: false },
+      func: () => {
+        const video = document.querySelector(
+          "video"
+        ) as HTMLVideoElement | null;
+        if (!video) return false;
+        video.play();
+        return true;
+      },
+    });
+
+    const first = Array.isArray(results) ? results[0] : null;
+    return (first?.result as boolean) ?? false;
+  } catch (error) {
+    console.error("Failed to play YouTube video:", error);
+    return false;
+  }
+}
+
+// ===== Video State Storage =====
+/**
+ * 영상 재생 상태를 저장합니다.
+ */
+export async function saveVideoPlaybackState(
+  wasPlaying: boolean
+): Promise<void> {
+  if (chrome?.storage?.local) {
+    await chrome.storage.local.set({ wasVideoPlaying: wasPlaying });
+  } else {
+    try {
+      localStorage.setItem("wasVideoPlaying", JSON.stringify(wasPlaying));
+    } catch {}
+  }
+}
+
+/**
+ * 저장된 영상 재생 상태를 가져옵니다.
+ */
+export async function getVideoPlaybackState(): Promise<boolean> {
+  if (chrome?.storage?.local) {
+    const r = await chrome.storage.local.get(["wasVideoPlaying"]);
+    return (r?.wasVideoPlaying as boolean) ?? false;
+  }
+  try {
+    const raw = localStorage.getItem("wasVideoPlaying");
+    return raw ? (JSON.parse(raw) as boolean) : false;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 저장된 영상 재생 상태를 삭제합니다.
+ */
+export async function clearVideoPlaybackState(): Promise<void> {
+  if (chrome?.storage?.local) {
+    await chrome.storage.local.remove(["wasVideoPlaying"]);
+  } else {
+    try {
+      localStorage.removeItem("wasVideoPlaying");
+    } catch {}
+  }
+}
