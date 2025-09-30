@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Logo from 'assets/images/logo/logo_text_shadow.png';
 import Taki from 'assets/images/character/taki.png';
-import { Slogan, BlackButton as Button, HorizontalSpacing } from 'components';
+import { Slogan, Button, HorizontalSpacing } from 'components';
 import useFadeIn from 'hooks/useFadeIn';
 
 function StartPage() {
@@ -29,7 +29,7 @@ function StartPage() {
       <Slogan>Faster, Smarter, Better - </Slogan>
       <HorizontalSpacing height='4%'/>
       <div className='w-full max-w-[50%] px-8'>
-        <Button fullWidth bgColor="bg-black" textColor="text-white" className="text-[3vw]" onClick={handleButtonClick}>Get Started</Button>
+        <Button fullWidth textColor="text-white" className="text-[3vw]" onClick={handleButtonClick}>Get Started</Button>
       </div>
     </div>
   )

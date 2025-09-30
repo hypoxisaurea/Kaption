@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 // import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Logo, BlackButton as Button } from 'components';
+import { Logo, Button } from 'components';
 import Tag from 'components/OptionPage/Tag';
 import StarRating from 'components/OptionPage/StarRating';
 import Dropdown from 'components/OptionPage/Dropdown';
@@ -158,7 +158,7 @@ function OptionPage() {
             </div>
             
             <div className="mt-[12vh] w-full max-w-[50%] px-8">
-                <Button fullWidth bgColor="bg-black" textColor="text-white"  className="text-sm" onClick={handleConfirmClick} >Confirm</Button>
+                <Button fullWidth textColor="text-white"  className="text-sm" onClick={handleConfirmClick} >Confirm</Button>
             </div>
         </div>
     )

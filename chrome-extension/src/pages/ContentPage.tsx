@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { VideoInfo, ContentModule } from 'components/common';
+import { VideoInfo, ContentModule, PageLayout } from 'components/common';
 import DeepDiveModal from 'components/ContentPage/DeepDiveModal';
 import usePageTransition from 'hooks/usePageTransition';
 import useAnalysisData from 'hooks/useAnalysisData';
@@ -10,7 +10,6 @@ import useContentPageState from 'hooks/useContentPageState';
 import LoadingIndicator from 'components/common/LoadingIndicator';
 import ErrorBanner from 'components/common/ErrorBanner';
 import EmptyAnalysisBanner from 'components/common/EmptyAnalysisBanner';
-import Header from 'components/common/WhiteHeader';
 import { pauseYouTubeVideo, playYouTubeVideo } from 'services/chromeVideo';
 
 function ContentPage() {
@@ -23,15 +22,12 @@ function ContentPage() {
   const { sortedCheckpoints, visibleUntilIndex, isBootstrapping, isProgressiveMode } = useProgressiveCheckpoints({ analysisData, enabled: true });
 
   const getPageClass = () => {
-    // Use min-h-screen to allow page height to expand under modal; body scroll will be locked by modal
-    const baseClass = 'w-full min-h-screen bg-[#1b1b1b] overflow-x-hidden hide-scrollbar';
-
     // 접힘 완료 후 나타나는 효과
     if (expandState === 'idle') {
-      return `${baseClass} card-expand-transition page-expand-entrance-active`;
+      return 'card-expand-transition page-expand-entrance-active';
     }
 
-    return `${baseClass} page-transition ${
+    return `page-transition ${
       isVisible ? 'page-transition-fade-in' : 'page-transition-fade-out'
     }`;
   };
@@ -77,44 +73,36 @@ function ContentPage() {
   };
 
   return (
-    <div className={getPageClass()}>
-      <div className='w-full box-border flex justify-center px-[5vw] py-[2vh] overflow-x-hidden'>
-        <div className='w-full min-w-0 max-w-md sm:max-w-lg lg:max-w-2xl'>
+    <PageLayout className={getPageClass()}>
+      <VideoInfo autoLoad={true} />
 
-          <div className='py-[2vh] mb-[3vh]'>
-            <Header />
-          </div>
-          
-          <VideoInfo autoLoad={true} />
+      {loading && (<LoadingIndicator />)}
 
-          {loading && (<LoadingIndicator />)}
+      {error && (<ErrorBanner message={error} />)}
 
-          {error && (<ErrorBanner message={error} />)}
-
-          {analysisData && analysisData.checkpoints && (
-            <div className='mt-6'>
-              {(isProgressiveMode ? sortedCheckpoints.slice(0, Math.min(sortedCheckpoints.length, visibleUntilIndex + 1)) : analysisData.checkpoints).map((checkpoint, index) => {
-                const cardId = `checkpoint-${checkpoint.timestamp_seconds}-${checkpoint.trigger_keyword}`;
-                const appearDelayMs = isBootstrapping ? 60 * Math.min(index, 8) : 0; // 초기 진입만 스타거
-                return (
-                  <ContentModule
-                    key={`${checkpoint.timestamp_seconds}-${index}`}
-                    checkpoint={checkpoint}
-                    onClick={handleContentModuleClick}
-                    isLoading={loadingCardId === cardId}
-                    appearDelayMs={appearDelayMs}
-                    interactive={true}
-                  />
-                );
-              })}
-            </div>
-          )}
-
-          {analysisData && (!analysisData.checkpoints || analysisData.checkpoints.length === 0) && (
-            <EmptyAnalysisBanner />
-          )}
+      {analysisData && analysisData.checkpoints && (
+        <div className='mt-6'>
+          {(isProgressiveMode ? sortedCheckpoints.slice(0, Math.min(sortedCheckpoints.length, visibleUntilIndex + 1)) : analysisData.checkpoints).map((checkpoint, index) => {
+            const cardId = `checkpoint-${checkpoint.timestamp_seconds}-${checkpoint.trigger_keyword}`;
+            const appearDelayMs = isBootstrapping ? 60 * Math.min(index, 8) : 0; // 초기 진입만 스타거
+            return (
+              <ContentModule
+                key={`${checkpoint.timestamp_seconds}-${index}`}
+                checkpoint={checkpoint}
+                onClick={handleContentModuleClick}
+                isLoading={loadingCardId === cardId}
+                appearDelayMs={appearDelayMs}
+                interactive={true}
+              />
+            );
+          })}
         </div>
-      </div>
+      )}
+
+      {analysisData && (!analysisData.checkpoints || analysisData.checkpoints.length === 0) && (
+        <EmptyAnalysisBanner />
+      )}
+
       {modalCheckpoint && (
         <DeepDiveModal
           checkpoint={modalCheckpoint}
@@ -122,7 +110,7 @@ function ContentPage() {
           onClose={handleModalClose}
         />
       )}
-    </div>
+    </PageLayout>
   );
 }
 

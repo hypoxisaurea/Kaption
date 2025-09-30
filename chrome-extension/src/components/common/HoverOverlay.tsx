@@ -9,6 +9,8 @@ interface HoverOverlayProps {
     className?: string;
     disabled?: boolean;
     showDeepDiveIcon?: boolean; // ContentPage 전용 deepdive 아이콘 표시 여부
+    useGradient?: boolean;      // 그라데이션 사용 여부 (기본 false)
+    enableBlur?: boolean;       // 블러 사용 여부 (기본 false)
 }
 
 function HoverOverlay({ 
@@ -18,7 +20,9 @@ function HoverOverlay({
     hoverOpacity = 0.2,
     className = '',
     disabled = false,
-    showDeepDiveIcon = false
+    showDeepDiveIcon = false,
+    useGradient = false,
+    enableBlur = false
 }: HoverOverlayProps) {
     const handleClick = () => {
         if (!disabled && onClick) {
@@ -36,10 +40,10 @@ function HoverOverlay({
                 <div 
                     className="absolute inset-0 rounded-[3.5vw] opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"
                     style={{
-                        background: showDeepDiveIcon 
+                        background: (showDeepDiveIcon || useGradient)
                             ? 'linear-gradient(135deg, rgba(255, 140, 122, 0.4), rgba(46, 196, 182, 0.4))'
                             : overlayColor,
-                        backdropFilter: showDeepDiveIcon ? 'blur(0.6vw)' : 'none'
+                        backdropFilter: (showDeepDiveIcon || enableBlur) ? 'blur(0.6vw)' : 'none'
                     }}
                 >
                     {showDeepDiveIcon && (
