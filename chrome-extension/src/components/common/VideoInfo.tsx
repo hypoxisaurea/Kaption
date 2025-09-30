@@ -1,6 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { VideoInfoData, isVideoInfo } from 'types/video';
+import { VideoInfoData, isVideoInfo } from 'types';
 import sampleAnalysis from 'assets/data/sample_analysis_result.json';
+
+interface VideoInfoProps {
+    videoInfo?: VideoInfoData; // props로 전달된 영상 정보 (MyPage용)
+    autoLoad?: boolean; // 자동으로 storage에서 로드할지 여부 (ContentPage용)
+}
 
 function isExtensionRuntime(): boolean {
     return typeof chrome !== 'undefined' && !!chrome.storage && !!chrome.storage.local;
@@ -28,13 +33,23 @@ function getDevDummyVideoInfo(): VideoInfoData {
     };
 }
 
-function VideoInfo() {
-    const [videoInfo, setVideoInfo] = useState<null | VideoInfoData>(null);
-    const [loading, setLoading] = useState<boolean>(true);
+function VideoInfo({ videoInfo: propVideoInfo, autoLoad = false }: VideoInfoProps) {
+    const [videoInfo, setVideoInfo] = useState<null | VideoInfoData>(propVideoInfo || null);
+    const [loading, setLoading] = useState<boolean>(propVideoInfo ? false : true);
     const [error, setError] = useState<string | null>(null);
     
-
     const loadInfo = useCallback(async () => {
+        if (propVideoInfo) {
+            setVideoInfo(propVideoInfo);
+            setLoading(false);
+            return;
+        }
+        
+        if (!autoLoad) {
+            setLoading(false);
+            return;
+        }
+        
         try {
             setLoading(true);
             setError(null);
@@ -50,12 +65,12 @@ function VideoInfo() {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [propVideoInfo, autoLoad]);
 
     useEffect(() => {
         loadInfo();
 
-        if (isExtensionRuntime()) {
+        if (isExtensionRuntime() && autoLoad) {
             const listener = (changes: Record<string, { oldValue?: unknown; newValue?: unknown }>, areaName: string) => {
                 if (areaName !== 'local') return;
                 if ('currentVideoInfo' in changes) {
@@ -75,7 +90,7 @@ function VideoInfo() {
                 }
             };
         }
-    }, [loadInfo]);
+    }, [loadInfo, autoLoad]);
 
     return (
         <div className='flex flex-col items-center w-full'>

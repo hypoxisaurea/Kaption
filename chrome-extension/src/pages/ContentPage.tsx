@@ -1,25 +1,24 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { VideoInfo } from 'components';
-import ContentModule from 'components/ContentPage/ContentModule';
+import { VideoInfo, ContentModule } from 'components/common';
 import DeepDiveModal from 'components/ContentPage/DeepDiveModal';
 import usePageTransition from 'hooks/usePageTransition';
 import useAnalysisData from 'hooks/useAnalysisData';
 import useCheckpointClick from 'hooks/useCheckpointClick';
 import useProgressiveCheckpoints from 'hooks/useProgressiveCheckpoints';
+import useContentPageState from 'hooks/useContentPageState';
 import LoadingIndicator from 'components/common/LoadingIndicator';
 import ErrorBanner from 'components/common/ErrorBanner';
 import EmptyAnalysisBanner from 'components/common/EmptyAnalysisBanner';
 import Header from 'components/common/WhiteHeader';
-import { pauseYouTubeVideo, playYouTubeVideo, getVideoPlaybackState, clearVideoPlaybackState, saveVideoAnalysisToHistory, getVideoInfoFromStorage } from 'services/chromeVideo';
+import { pauseYouTubeVideo, playYouTubeVideo } from 'services/chromeVideo';
 
 function ContentPage() {
   const { isVisible, expandState } = usePageTransition();
   const location = useLocation();
   const navigate = useNavigate();
   const { analysisData, loading, error } = useAnalysisData();
-  const [loadingCardId, setLoadingCardId] = useState<string | null>(null);
-  const [wasVideoPlaying, setWasVideoPlaying] = useState<boolean>(false);
+  const { loadingCardId, setLoadingCardId, wasVideoPlaying, setWasVideoPlaying, restoreScrollPosition } = useContentPageState();
   const { handleCheckpointClick } = useCheckpointClick({ onLoadingChange: setLoadingCardId });
   const { sortedCheckpoints, visibleUntilIndex, isBootstrapping, isProgressiveMode } = useProgressiveCheckpoints({ analysisData, enabled: true });
 
@@ -38,54 +37,8 @@ function ContentPage() {
   };
 
   useEffect(() => {
-    // 뒤로 돌아왔을 때: state로 전달된 스크롤 위치와 타겟 모듈로 복원
-    const navState = (window.history.state && (window.history.state as any).usr) || undefined;
-    if (navState && navState.from === 'deepdive' && navState.clickedElementId) {
-      const target = document.getElementById(navState.clickedElementId);
-      if (target) {
-        target.scrollIntoView({ behavior: 'auto', block: 'center' });
-        target.classList.add('module-highlight');
-        setTimeout(() => target.classList.remove('module-highlight'), 800);
-      } else if (typeof navState.scrollY === 'number') {
-        window.scrollTo({ top: navState.scrollY, behavior: 'auto' });
-      }
-    }
-  }, []);
-
-  // ContentPage 진입 시 저장된 영상 재생 상태 확인 및 재개
-  useEffect(() => {
-    const restoreVideoPlayback = async () => {
-      try {
-        const wasPlaying = await getVideoPlaybackState();
-        if (wasPlaying) {
-          await playYouTubeVideo();
-          await clearVideoPlaybackState();
-        }
-      } catch (error) {
-        console.error('Failed to restore YouTube video playback:', error);
-      }
-    };
-
-    restoreVideoPlayback();
-  }, []);
-
-  // 분석 데이터가 로드되면 저장
-  useEffect(() => {
-    const saveAnalysisToHistory = async () => {
-      if (analysisData && !loading && !error) {
-        try {
-          const videoInfo = await getVideoInfoFromStorage();
-          if (videoInfo) {
-            await saveVideoAnalysisToHistory(videoInfo, analysisData);
-          }
-        } catch (error) {
-          console.error('Failed to save analysis to history:', error);
-        }
-      }
-    };
-
-    saveAnalysisToHistory();
-  }, [analysisData, loading, error]);
+    restoreScrollPosition();
+  }, [restoreScrollPosition]);
 
   // 진행형/정적 렌더링 로직은 훅으로 이동
 
@@ -132,7 +85,7 @@ function ContentPage() {
             <Header />
           </div>
           
-          <VideoInfo />
+          <VideoInfo autoLoad={true} />
 
           {loading && (<LoadingIndicator />)}
 
@@ -150,6 +103,7 @@ function ContentPage() {
                     onClick={handleContentModuleClick}
                     isLoading={loadingCardId === cardId}
                     appearDelayMs={appearDelayMs}
+                    interactive={true}
                   />
                 );
               })}

@@ -1,58 +1,17 @@
-import React, { useEffect, useState } from 'react'
-import { VideoAnalysisHistory, getAllVideoAnalysisHistory, deleteVideoAnalysisHistory } from 'services/chromeVideo'
-import { ContentModule } from 'components/MyPage'
-import VideoInfo from 'components/MyPage/VideoInfo'
-import Header from 'components/common/WhiteHeader'
+import React from 'react'
+import { ContentModule, VideoInfo, WhiteHeader } from 'components/common'
+import useVideoAnalysisHistory from 'hooks/useVideoAnalysisHistory'
 
 function MyPage() {
-  const [analysisHistory, setAnalysisHistory] = useState<VideoAnalysisHistory[]>([])
-  const [selectedVideo, setSelectedVideo] = useState<VideoAnalysisHistory | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    loadAnalysisHistory()
-  }, [])
-
-  const loadAnalysisHistory = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      const history = await getAllVideoAnalysisHistory()
-      setAnalysisHistory(history)
-    } catch (e) {
-      setError('분석 기록을 불러오는데 실패했습니다.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleVideoSelect = (video: VideoAnalysisHistory) => {
-    setSelectedVideo(video)
-  }
-
-  const handleVideoDelete = async (videoId: string) => {
-    try {
-      await deleteVideoAnalysisHistory(videoId)
-      setAnalysisHistory(prev => prev.filter(video => video.videoId !== videoId))
-      if (selectedVideo?.videoId === videoId) {
-        setSelectedVideo(null)
-      }
-    } catch (e) {
-      setError('분석 기록을 삭제하는데 실패했습니다.')
-    }
-  }
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
+  const {
+    analysisHistory,
+    selectedVideo,
+    loading,
+    error,
+    handleVideoSelect,
+    handleVideoDelete,
+    formatDate,
+  } = useVideoAnalysisHistory()
 
   if (loading) {
     return (
@@ -60,7 +19,7 @@ function MyPage() {
         <div className='w-full box-border flex justify-center px-[5vw] py-[2vh] overflow-x-hidden'>
           <div className='w-full min-w-0 max-w-md sm:max-w-lg lg:max-w-2xl'>
             <div className='py-[2vh] mb-[3vh]'>
-              <Header />
+              <WhiteHeader />
             </div>
             <div className="flex items-center justify-center h-96">
               <div className="text-white text-lg">분석 기록을 불러오는 중...</div>
@@ -77,7 +36,7 @@ function MyPage() {
         <div className='w-full box-border flex justify-center px-[5vw] py-[2vh] overflow-x-hidden'>
           <div className='w-full min-w-0 max-w-md sm:max-w-lg lg:max-w-2xl'>
             <div className='py-[2vh] mb-[3vh]'>
-              <Header />
+              <WhiteHeader />
             </div>
             <div className="flex items-center justify-center h-96">
               <div className="text-white text-lg">{error}</div>
@@ -94,7 +53,7 @@ function MyPage() {
         <div className='w-full box-border flex justify-center px-[5vw] py-[2vh] overflow-x-hidden'>
           <div className='w-full min-w-0 max-w-md sm:max-w-lg lg:max-w-2xl'>
             <div className='py-[2vh] mb-[3vh]'>
-              <Header />
+              <WhiteHeader />
             </div>
             <div className="flex items-center justify-center h-96">
               <div className="text-center text-white">
@@ -114,7 +73,7 @@ function MyPage() {
         <div className='w-full min-w-0 max-w-md sm:max-w-lg lg:max-w-2xl'>
           
           <div className='py-[2vh] mb-[3vh]'>
-            <Header />
+            <WhiteHeader />
           </div>
           
           <div className="mb-6">
@@ -147,6 +106,7 @@ function MyPage() {
                   <ContentModule
                     key={`${checkpoint.timestamp_seconds}-${checkpoint.trigger_keyword}`}
                     checkpoint={checkpoint}
+                    interactive={false}
                   />
                 ))}
               </div>

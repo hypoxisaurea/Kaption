@@ -1,4 +1,4 @@
-import { VideoInfoData } from "types/video"; // 'types/video' 경로에 VideoInfoData 타입이 정의되어 있다고 가정합니다.
+import { VideoInfoData } from "types";
 /** Analyze API response shape (subset we care about) */
 export type AnalyzeResponse = {
   video_info: {
