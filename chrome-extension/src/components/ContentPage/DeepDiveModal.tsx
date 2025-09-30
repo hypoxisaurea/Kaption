@@ -6,23 +6,7 @@ import studyTaki from 'assets/images/character/study_taki.png';
 import taki from 'assets/images/character/taki.png';
 import useDeepDiveStages from 'hooks/useDeepDiveStages';
 import closeButton from 'assets/images/icon/button_close.png';
-
-interface Explanation {
-  summary: string;
-  main: string;
-  tip: string;
-}
-
-interface Checkpoint {
-  timestamp_seconds: number;
-  timestamp_formatted: string;
-  trigger_keyword: string;
-  segment_stt: string;
-  scene_description: string;
-  context_title: string;
-  explanation: Explanation;
-  related_interests?: string[];
-}
+import { Checkpoint } from 'types';
 
 interface DeepDiveModalProps {
   checkpoint: Checkpoint;
@@ -185,7 +169,7 @@ function DeepDiveModal({ checkpoint, deepDiveItem, onClose }: DeepDiveModalProps
                     <button
                       key={i}
                       className={`text-left px-3 py-2 rounded-[3vw] border ${selectedIdx === i ? 'border-black bg-gray-100' : 'border-gray-200 hover:bg-gray-100'}`}
-                      onClick={() => actions.chooseOption(currentQuiz, i, (t) => window.speechSynthesis?.speak?.(new SpeechSynthesisUtterance(t)))}
+                      onClick={() => actions.chooseOption(currentQuiz, i)}
                     >
                       {opt.text}
                     </button>
@@ -196,7 +180,7 @@ function DeepDiveModal({ checkpoint, deepDiveItem, onClose }: DeepDiveModalProps
                 <div className="mb-3">
                   <input value={openAnswer} onChange={(e) => setOpenAnswer(e.target.value)} className="w-full border border-gray-200 rounded-[3vw] p-2 text-[0.9rem]" placeholder="Write a one-sentence answer" />
                   <div className="mt-2">
-                    <button className="px-3 py-1 rounded-[3vw] bg-black text-white text-sm" onClick={() => actions.submitOpenEnded(currentQuiz, openAnswer, (t) => window.speechSynthesis?.speak?.(new SpeechSynthesisUtterance(t)))}>Submit</button>
+                    <button className="px-3 py-1 rounded-[3vw] bg-black text-white text-sm" onClick={() => actions.submitOpenEnded(currentQuiz, openAnswer)}>Submit</button>
                   </div>
                 </div>
               )}
