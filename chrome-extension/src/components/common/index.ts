@@ -6,4 +6,6 @@ export { default as BlackButton } from "./BlackButton";
 export { default as ContentModule } from "./ContentModule";
 export { default as VideoInfo } from "./VideoInfo";
 export { default as HoverOverlay } from "./HoverOverlay";
+export { default as Spinner } from "./Spinner";
+
 export * from "types";

@@ -14,4 +14,4 @@ export { default as Dropdown } from "./OptionPage/Dropdown";
 export { default as Tag } from "./OptionPage/Tag";
 
 export { default as Slogan } from "./StartPage/Slogan";
-export { default as Spinner } from "./ContentPage/Spinner";
+export { default as Spinner } from "./common/Spinner";
