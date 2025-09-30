@@ -149,7 +149,48 @@ export async function extractVideoInfoFromActiveTab(
       const url = window.location.href;
       const ld = parseLdVideoObject();
 
+      // XPATH를 사용하여 깔끔한 YouTube 제목 추출
+      const getYouTubeTitle = () => {
+        try {
+          // YouTube의 제목 요소를 XPATH로 찾기
+          const titleElement = document.evaluate(
+            "/html/body/ytd-app/div[1]/ytd-page-manager/ytd-watch-flexy/div[5]/div[1]/div/div[2]/ytd-watch-metadata/div/div[1]/h1/yt-formatted-string",
+            document,
+            null,
+            XPathResult.FIRST_ORDERED_NODE_TYPE,
+            null
+          ).singleNodeValue as HTMLElement | null;
+
+          if (titleElement) {
+            return titleElement.textContent?.trim() || null;
+          }
+
+          // 대안: 다른 가능한 제목 선택자들
+          const alternativeSelectors = [
+            "h1.ytd-video-primary-info-renderer yt-formatted-string",
+            "h1.ytd-video-primary-info-renderer",
+            "yt-formatted-string#text",
+            ".ytd-video-primary-info-renderer h1",
+            'h1[class*="title"]',
+          ];
+
+          for (const selector of alternativeSelectors) {
+            const element = document.querySelector(
+              selector
+            ) as HTMLElement | null;
+            if (element?.textContent?.trim()) {
+              return element.textContent.trim();
+            }
+          }
+        } catch (e) {
+          console.warn("Failed to extract YouTube title via XPATH:", e);
+        }
+        return null;
+      };
+
+      const cleanTitle = getYouTubeTitle();
       const metaTitle =
+        cleanTitle ??
         selectContent('meta[property="og:title"]') ??
         ld?.name ??
         selectContent('meta[itemprop="name"]') ??
@@ -189,7 +230,7 @@ export async function extractVideoInfoFromActiveTab(
 
       return {
         url,
-        title: document.title,
+        title: cleanTitle || document.title,
         metaTitle,
         metaDescription,
         metaKeywords,

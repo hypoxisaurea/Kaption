@@ -1,129 +1,85 @@
 import React from 'react'
-import { ContentModule, VideoInfo, WhiteHeader } from 'components/common'
+import { ContentModule, VideoInfo, PageLayout } from 'components/common'
+import VideoList from 'components/MyPage/VideoList'
+import SavingModal from 'components/MyPage/SavingModal'
 import useVideoAnalysisHistory from 'hooks/useVideoAnalysisHistory'
 
+/**
+ * MyPage - 사용자의 학습 기록을 보여주는 페이지
+ * 
+ * 기능:
+ * - 분석된 YouTube 영상들의 목록 표시
+ * - 영상 선택 시 해당 영상의 분석 결과 표시
+ * - 로딩, 에러, 빈 상태 처리
+ */
 function MyPage() {
+  // 비디오 분석 기록 관련 훅 사용
   const {
-    analysisHistory,
-    selectedVideo,
-    loading,
-    error,
-    handleVideoSelect,
-    handleVideoDelete,
-    formatDate,
+    analysisHistory,    // 분석 기록 목록
+    selectedVideo,      // 현재 선택된 영상
+    loading,           // 로딩 상태
+    error,             // 에러 상태
+    handleVideoSelect, // 영상 선택 핸들러
   } = useVideoAnalysisHistory()
 
+  // 모달 상태 (훅은 반드시 최상단에서 선언)
+  const [isModalOpen, setIsModalOpen] = React.useState(false)
+  const openModal = () => setIsModalOpen(true)
+  const closeModal = () => setIsModalOpen(false)
+
+  // 로딩 상태일 때 표시
   if (loading) {
     return (
-      <div className="w-full min-h-screen bg-[#1b1b1b] overflow-x-hidden hide-scrollbar">
-        <div className='w-full box-border flex justify-center px-[5vw] py-[2vh] overflow-x-hidden'>
-          <div className='w-full min-w-0 max-w-md sm:max-w-lg lg:max-w-2xl'>
-            <div className='py-[2vh] mb-[3vh]'>
-              <WhiteHeader />
-            </div>
-            <div className="flex items-center justify-center h-96">
-              <div className="text-white text-lg">분석 기록을 불러오는 중...</div>
-            </div>
-          </div>
+      <PageLayout className="h-screen flex flex-col overflow-hidden">
+        <div className="flex-1 flex items-center justify-center overflow-y-auto">
+          <div className="text-white text-lg">Loading...</div>
         </div>
-      </div>
+      </PageLayout>
     )
   }
 
+  // 에러 상태일 때 표시
   if (error) {
     return (
-      <div className="w-full min-h-screen bg-[#1b1b1b] overflow-x-hidden hide-scrollbar">
-        <div className='w-full box-border flex justify-center px-[5vw] py-[2vh] overflow-x-hidden'>
-          <div className='w-full min-w-0 max-w-md sm:max-w-lg lg:max-w-2xl'>
-            <div className='py-[2vh] mb-[3vh]'>
-              <WhiteHeader />
-            </div>
-            <div className="flex items-center justify-center h-96">
-              <div className="text-white text-lg">{error}</div>
-            </div>
-          </div>
+      <PageLayout className="h-screen flex flex-col overflow-hidden">
+        <div className="flex-1 flex items-center justify-center overflow-y-auto">
+          <div className="text-white text-lg">{error}</div>
         </div>
-      </div>
+      </PageLayout>
     )
   }
 
+  // 분석 기록이 없을 때 표시
   if (analysisHistory.length === 0) {
     return (
-      <div className="w-full min-h-screen bg-[#1b1b1b] overflow-x-hidden hide-scrollbar">
-        <div className='w-full box-border flex justify-center px-[5vw] py-[2vh] overflow-x-hidden'>
-          <div className='w-full min-w-0 max-w-md sm:max-w-lg lg:max-w-2xl'>
-            <div className='py-[2vh] mb-[3vh]'>
-              <WhiteHeader />
-            </div>
-            <div className="flex items-center justify-center h-96">
-              <div className="text-center text-white">
-                <div className="text-xl mb-4">아직 분석한 영상이 없습니다</div>
-                <div className="text-sm opacity-80">YouTube에서 영상을 분석해보세요!</div>
-              </div>
-            </div>
+      <PageLayout className="h-screen flex flex-col overflow-hidden">
+        <div className="flex-1 flex items-center justify-center overflow-y-auto">
+          <div className="text-center text-white">
+            <div className="text-xl mb-4">No analysis history</div>
+            <div className="text-sm opacity-80">Analyze a video on YouTube!</div>
           </div>
         </div>
-      </div>
+      </PageLayout>
     )
   }
 
+  // 메인 컨텐츠 렌더링
   return (
-    <div className="w-full min-h-screen bg-[#1b1b1b] overflow-x-hidden hide-scrollbar">
-      <div className='w-full box-border flex justify-center px-[5vw] py-[2vh] overflow-x-hidden'>
-        <div className='w-full min-w-0 max-w-md sm:max-w-lg lg:max-w-2xl'>
-          
-          <div className='py-[2vh] mb-[3vh]'>
-            <WhiteHeader />
-          </div>
-          
-          <div className="mb-6">
-            <div className="text-white text-lg font-semibold mb-4">내 분석 기록</div>
-            <div className="flex flex-wrap gap-2">
-              {analysisHistory.map((video) => (
-                <button
-                  key={video.videoId}
-                  onClick={() => handleVideoSelect(video)}
-                  className={`px-4 py-2 rounded-lg text-sm transition-colors ${
-                    selectedVideo?.videoId === video.videoId 
-                      ? 'bg-white text-black' 
-                      : 'bg-gray-700 text-white hover:bg-gray-600'
-                  }`}
-                >
-                  {video.videoInfo.title.length > 30 
-                    ? video.videoInfo.title.substring(0, 30) + '...' 
-                    : video.videoInfo.title}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {selectedVideo && (
-            <>
-              <VideoInfo videoInfo={selectedVideo.videoInfo} />
-              
-              <div className='mt-6'>
-                {selectedVideo.analysisResult.checkpoints.map((checkpoint) => (
-                  <ContentModule
-                    key={`${checkpoint.timestamp_seconds}-${checkpoint.trigger_keyword}`}
-                    checkpoint={checkpoint}
-                    interactive={false}
-                  />
-                ))}
-              </div>
-            </>
-          )}
-
-          {!selectedVideo && analysisHistory.length > 0 && (
-            <div className="flex items-center justify-center h-96">
-              <div className="text-center text-white">
-                <div className="text-lg mb-2">영상을 선택해주세요</div>
-                <div className="text-sm opacity-80">위에서 분석 결과를 보고 싶은 영상을 선택하세요</div>
-              </div>
-            </div>
-          )}
-        </div>
+    <PageLayout className="h-screen flex flex-col overflow-hidden">
+      <div className="flex-1 overflow-x-hidden hide-scrollbar">
+        {/* 영상 목록 섹션 */}
+        <VideoList 
+          analysisHistory={analysisHistory}
+          selectedVideo={selectedVideo}
+          onVideoSelect={(video) => { handleVideoSelect(video); openModal(); }}
+        />
       </div>
-    </div>
+
+      {/* 전체 화면 분석 결과 모달 */}
+      {isModalOpen && selectedVideo && (
+        <SavingModal video={selectedVideo} onClose={closeModal} />
+      )}
+    </PageLayout>
   )
 }
 

@@ -40,6 +40,20 @@ function Dropdown({ items, value = null, onChange }: DropdownProps) {
                         return selectedItem?.label ?? String(selected);
                     }}
                     inputProps={{ 'aria-label': 'Dropdown select' }}
+                    sx={{
+                        '& .MuiSelect-select:focus': {
+                            backgroundColor: 'transparent',
+                        },
+                        '& .MuiInput-underline:after': {
+                            borderBottomColor: '#1b1b1b',
+                        },
+                        '& .MuiInput-underline:before': {
+                            borderBottomColor: 'rgba(0, 0, 0, 0.42)',
+                        },
+                        '& .MuiInput-underline:hover:not(.Mui-disabled):before': {
+                            borderBottomColor: 'rgba(0, 0, 0, 0.87)',
+                        },
+                    }}
                 >
                     {items.map(item => (
                         <MenuItem sx={{ fontSize: '0.9rem', color: '#1b1b1b' }} key={item.id} value={item.id}>{item.label}</MenuItem>
