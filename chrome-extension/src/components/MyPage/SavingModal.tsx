@@ -35,8 +35,8 @@ function SavingModal({ video, onClose }: SavingModalProps) {
   return createPortal(
     (
       <div className="fixed w-full h-screen inset-0 z-50">
-        {/* Fullscreen Panel */}
-        <div className={`absolute w-full h-screen inset-0 bg-white font-spoqa flex flex-col overflow-hidden modal-panel modal-panel--open`}>
+        {/* Fullscreen Panel (ContentPage 배경과 동일 톤) */}
+        <div className={`absolute w-full h-screen inset-0 bg-[#1b1b1b] font-spoqa flex flex-col overflow-hidden modal-panel modal-panel--open`}>
           {/* Header */}
           <div className="shrink-0 flex items-center justify-between px-[4vw] mt-[5vh] mb-[3vh]">
             <img
@@ -47,23 +47,20 @@ function SavingModal({ video, onClose }: SavingModalProps) {
             />
           </div>
 
-          {/* Content */}
-          <div className="flex-1 px-[4vw] py-[2vh]">
-            <div className="w-full min-h-full bg-white rounded-none px-[4vw] py-5 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
-              {/* 비디오 정보 */}
-              <div className="mb-[3vh]">
+          {/* Content: ContentPage와 동일한 센터링/폭 제약 적용 */}
+          <div className="flex-1 overflow-y-auto">
+            <div className='w-full box-border flex justify-center px-[5vw] py-[2vh] overflow-x-hidden'>
+              <div className='w-full min-w-0 max-w-md sm:max-w-lg lg:max-w-2xl'>
                 <VideoInfo videoInfo={video.videoInfo} />
-              </div>
-
-              {/* 체크포인트 목록 (비인터랙티브) */}
-              <div className="mt-6">
-                {video.analysisResult.checkpoints.map((checkpoint: any) => (
-                  <ContentModule
-                    key={`${checkpoint.timestamp_seconds}-${checkpoint.trigger_keyword}`}
-                    checkpoint={checkpoint}
-                    interactive={false}
-                  />
-                ))}
+                <div className='mt-6'>
+                  {video.analysisResult.checkpoints.map((checkpoint: any, index: number) => (
+                    <ContentModule
+                      key={`${checkpoint.timestamp_seconds}-${index}`}
+                      checkpoint={checkpoint}
+                      interactive={false}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           </div>

@@ -84,8 +84,8 @@ function DeepDiveModal({ checkpoint, deepDiveItem, onClose }: DeepDiveModalProps
         </div>
 
         {/* Content (fills the remaining viewport height) */}
-        <div className="flex-1 px-[4vw] py-[2vh]">
-          <div className="w-full min-h-full bg-white rounded-none px-[4vw] py-5 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+        <div className="flex-1 py-[2vh] flex justify-center"> 
+          <div className="relative z-[40] mx-auto w-[calc(100vw-8vw)] bg-white rounded-none px-[4vw] py-5 shadow-[0_2px_12px_rgba(0,0,0,0.06)] min-h-[70vh] max-h-[80vh] overflow-y-auto">
           {/* Header */}
           <div className="flex items-start justify-between mb-[6vh]">
             <div className="text-[1rem] font-bold text-[#1b1b1b]">
@@ -218,7 +218,7 @@ function DeepDiveModal({ checkpoint, deepDiveItem, onClose }: DeepDiveModalProps
         </div>
         {/* Mascot Overlay */}
         {mascotSrc && (
-          <div className="pointer-events-none absolute right-4 bottom-6 z-[30] transition-all duration-500 ease-out">
+          <div className="pointer-events-none absolute right-[4vw] bottom-[4vh] z-[60] transition-all duration-500 ease-out">
             <img
               src={mascotSrc}
               alt="Tutor mascot"
