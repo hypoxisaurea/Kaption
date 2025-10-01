@@ -42,7 +42,7 @@ function SavingModal({ video, onClose }: SavingModalProps) {
             <img
               src={closeButton}
               onClick={onClose}
-              className="w-[5vw] h-auto"
+              className="w-[5vw] h-auto invert"
               alt="Close"
             />
           </div>
