@@ -1,11 +1,16 @@
 # Kaption (캡션) 🎬
 
 ## 자막을 넘어, K-콘텐츠와 직접 소통하며 배우는 문화 학습 AI
-
 *2025 서울 AI 해커톤 - 주제1: 활력있고 매력적인 글로벌 선도도시*
+
+
+## 📺 Demo Video
+[Kaption Demo Video](https://youtu.be/Uo4fp2r2WkY)
+
 
 ## 🌟 프로젝트 개요
 Kaption은 K-콘텐츠를 시청하는 전 세계 사용자들이 한국 문화의 깊은 맥락을 이해할 수 있도록 돕는 Chrome Extension입니다. AI가 실시간으로 문화적 뉘앙스를 분석하고, 대화형 학습 경험(Recap → Think → Quiz)을 통해 자연스럽고 몰입감 있는 문화 교육을 제공합니다.
+
 
 ## ✨ 핵심 기능
 
