@@ -155,5 +155,7 @@ Kaption/
 - [ ] 대화 맥락 추적 및 학습 이력 관리
 - [ ] 다국어 지원 (영어, 중국어, 일본어)
 - [ ] 학습 진도 시각화 대시보드
----
 
+### ‼️currently not published on the Chrome Web Store‼️
+
+---
