@@ -29,6 +29,8 @@ Kaption은 K-콘텐츠를 시청하는 전 세계 사용자들이 한국 문화�
 - **AI 튜터**: OpenAI Realtime API를 통한 자연스러운 음성 상호작용
 
 ## 🛠️ 기술 스택
+<img width="1003" height="475" alt="스크린샷 2026-02-12 오후 2 44 13" src="https://github.com/user-attachments/assets/ab13f0f1-1967-4a5d-99b3-be5075a23c84" />
+
 
 ### Frontend (Chrome Extension MV3)
 ```
